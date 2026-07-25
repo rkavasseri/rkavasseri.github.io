@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm run *)",
+      "Bash(grep -o '<pre[^>]*>.\\\\{0,600\\\\}' guides/gpu-cluster-setup/index.html)",
+      "Bash(git mv *)"
+    ]
+  }
+}

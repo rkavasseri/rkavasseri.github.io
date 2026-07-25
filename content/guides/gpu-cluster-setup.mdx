@@ -1,0 +1,99 @@
+---
+title: "Building a Multi-Node GPU Cluster from Scratch"
+description: "A complete guide to setting up a bare-metal GPU cluster for ML training and inference."
+date: "2025-01-15"
+tags: ["HPC", "GPU", "Linux", "Networking"]
+author: "R. Kavasseri"
+draft: false
+---
+
+Standing up a multi-node GPU cluster is less about the hardware than about the
+dozen small decisions that determine whether the machine is usable a year from
+now. This guide walks through a bare-metal build: provisioning the nodes,
+wiring the interconnect, and getting a distributed training job to run across
+all of them.
+
+<Callout type="info">
+  This guide assumes physical access to the machines and a network you control.
+  For cloud instances, skip the provisioning section entirely.
+</Callout>
+
+## Hardware Planning
+
+Start with the interconnect, not the accelerators. A cluster whose GPUs
+outpace its network spends most of its time waiting on gradient
+synchronisation, and no amount of tuning recovers that.
+
+| Component | Recommendation | Notes |
+| --- | --- | --- |
+| Interconnect | InfiniBand HDR (200 Gb/s) | RoCEv2 works if budget is tight |
+| Storage | NVMe scratch per node | Shared NFS for datasets |
+| Head node | Modest CPU, lots of RAM | Runs the scheduler, not jobs |
+
+## Provisioning the Nodes
+
+Use a network install so every node lands in a known-identical state. Keep the
+image minimal — drivers and CUDA come from configuration management.
+
+<Steps>
+
+### Configure PXE boot on the head node
+
+Point every compute node at the head node's TFTP server so a rebuild is a
+reboot rather than a trip to the rack.
+
+### Install the base OS
+
+A minimal Ubuntu LTS image is enough. Skip the desktop packages.
+
+### Push driver and CUDA layers with Ansible
+
+Pin exact versions. A cluster with mismatched CUDA minor versions across nodes
+will fail in ways that look like application bugs.
+
+</Steps>
+
+## Verifying the Interconnect
+
+Before running any training job, confirm the fabric actually delivers its
+rated bandwidth. The `ib_write_bw` benchmark is the fastest way to find a bad
+cable:
+
+```bash showLineNumbers
+# On the server node
+ib_write_bw -d mlx5_0 -a -F
+
+# On the client node, pointed at the server
+ib_write_bw -d mlx5_0 -a -F 10.0.0.11
+
+# Expect ~24 GB/s on HDR; anything under 20 means a bad link
+ibstat | grep -E 'State|Rate'
+```
+
+<Callout type="warning">
+  If bandwidth is asymmetric between node pairs, check the subnet manager
+  before blaming NCCL. A single misconfigured switch port degrades collectives
+  across the entire job.
+</Callout>
+
+## Running a Distributed Job
+
+With the fabric verified, a `torchrun` launch across nodes confirms the whole
+stack end to end:
+
+```python
+import torch
+import torch.distributed as dist
+
+dist.init_process_group(backend="nccl")
+rank = dist.get_rank()
+torch.cuda.set_device(rank % torch.cuda.device_count())
+
+tensor = torch.ones(1, device="cuda") * rank
+dist.all_reduce(tensor, op=dist.ReduceOp.SUM)
+print(f"rank {rank}: all_reduce result = {tensor.item()}")
+```
+
+If every rank prints the same sum, the cluster is working. From here the
+remaining work is scheduling policy — which is a longer discussion, and the
+subject of a future guide.

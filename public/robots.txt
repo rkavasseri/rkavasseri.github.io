@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://rkavasseri.github.io/sitemap.xml
