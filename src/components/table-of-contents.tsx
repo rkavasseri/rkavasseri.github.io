@@ -70,7 +70,17 @@ function TocLinks({ entries, activeId, onNavigate }: TocLinksProps) {
     if (!target) return;
 
     event.preventDefault();
-    target.scrollIntoView({ behavior: "smooth", block: "start" });
+    // Honour prefers-reduced-motion — scrollIntoView ignores the CSS override.
+    const prefersReduced = window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    ).matches;
+    target.scrollIntoView({
+      behavior: prefersReduced ? "auto" : "smooth",
+      block: "start",
+    });
+    // Move keyboard focus to the heading, not just the viewport.
+    target.setAttribute("tabindex", "-1");
+    target.focus({ preventScroll: true });
     // Keep the URL shareable without letting the browser jump.
     window.history.replaceState(null, "", `#${id}`);
     onNavigate?.();

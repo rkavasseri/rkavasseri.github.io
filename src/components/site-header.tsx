@@ -44,7 +44,7 @@ export function SiteHeader() {
                 href={link.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "relative rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                  "relative rounded-md px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                   active
                     ? "text-foreground"
                     : "text-muted-foreground hover:text-foreground"
@@ -52,7 +52,7 @@ export function SiteHeader() {
               >
                 {link.title}
                 {active ? (
-                  <span className="absolute inset-x-3 -bottom-px h-px bg-primary" />
+                  <span className="absolute inset-x-3 -bottom-px h-0.5 rounded-full bg-foreground" />
                 ) : null}
               </Link>
             );
