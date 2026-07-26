@@ -9,41 +9,37 @@ export interface Project {
     demo?: string;
     paper?: string;
   };
+  /** Overrides the default link labels ("Code", "Demo", "Paper"). */
+  linkLabels?: Partial<Record<"github" | "demo" | "paper", string>>;
+  /** Short status note for projects without a public repo, e.g. "Private beta". */
+  status?: string;
   featured?: boolean;
 }
 
-// TODO: replace placeholder projects with real work.
 export const projects: Project[] = [
   {
-    title: "Grid Stability Simulator",
+    title: "Inventrix",
     description:
-      "Transient stability analysis for large interconnected power networks, with a solver that scales across multi-node CPU clusters.",
-    tech: ["C++", "MPI", "Python", "NumPy"],
+      "Retrieval-augmented semantic search over NSF awards. Embeds a research idea, retrieves and clusters the nearest awards, then chains LLM synthesis to map the funding landscape: crowded themes, adjacent work, and open gaps.",
+    tech: ["RAG", "Semantic Search", "Embeddings", "pgvector", "Next.js"],
     links: {
-      github: "https://github.com/rkavasseri",
-      paper: "https://example.com/paper",
+      demo: "https://www.inventrix.app",
     },
+    linkLabels: { demo: "inventrix.app" },
+    status: "Private repo",
     featured: true,
   },
   {
-    title: "PMU Anomaly Detection",
+    title: "instaprop",
     description:
-      "Streaming detection of anomalous events in phasor measurement unit data using sequence models trained on synthetic fault scenarios.",
-    tech: ["PyTorch", "Kafka", "Pandas"],
+      "CLI toolkit that drafts NSF proposals with an agentic review panel. Give it a solicitation and your merit bullets; it returns a concept note vetted by five simulated reviewers through a draft–review–revise loop.",
+    tech: ["Agentic Workflows", "LLM Orchestration", "Python", "CLI", "PyPI"],
     links: {
-      github: "https://github.com/rkavasseri",
+      // NOTE: points at rkavasseri — update if the transfer is not completed.
+      github: "https://github.com/rkavasseri/instaprop",
+      demo: "https://pypi.org/project/instaprop/",
     },
-    featured: true,
-  },
-  {
-    title: "Renewable Forecasting Toolkit",
-    description:
-      "Short-horizon wind and solar generation forecasts combining numerical weather prediction output with gradient-boosted residual models.",
-    tech: ["Python", "XGBoost", "ERA5", "Dask"],
-    links: {
-      github: "https://github.com/rkavasseri",
-      demo: "https://example.com/demo",
-    },
+    linkLabels: { demo: "PyPI" },
     featured: true,
   },
 ];

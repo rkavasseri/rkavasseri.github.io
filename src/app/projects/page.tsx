@@ -6,7 +6,7 @@ import { projects } from "@/lib/projects";
 export const metadata: Metadata = {
   title: "Projects",
   description:
-    "Research software, simulation tooling, and machine learning systems for power grid analysis.",
+    "Research software and production systems spanning machine learning, networks, and applied AI.",
 };
 
 export default function ProjectsPage() {
@@ -17,12 +17,15 @@ export default function ProjectsPage() {
           Projects
         </h1>
         <p className="mt-4 text-lg leading-8 text-muted-foreground">
-          Software from research work — simulation tooling, data pipelines, and
-          models. Most of it is open source; papers are linked where they exist.
+          Work that made it out of the notebook — models, data pipelines, and
+          the deployed systems around them. Code and papers are linked where
+          they exist.
         </p>
       </header>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      {/* auto-fill keeps card width consistent whether there are 1 or 12 —
+          they fill left to right instead of stretching across the row. */}
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,20rem),1fr))] gap-6">
         {projects.map((project) => (
           <ProjectCard key={project.title} project={project} />
         ))}

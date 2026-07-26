@@ -34,7 +34,7 @@ export default function HomePage() {
           </Link>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,20rem),1fr))] gap-6">
           {featuredGuides.map((guide) => (
             <GuideCard key={guide.slug} guide={guide} />
           ))}
@@ -49,7 +49,8 @@ export default function HomePage() {
                 Selected Projects
               </h2>
               <p className="mt-2 text-muted-foreground">
-                Research software and tooling, mostly open source.
+                Things I&apos;ve built and shipped — research software and
+                production systems.
               </p>
             </div>
             <Link
@@ -61,7 +62,7 @@ export default function HomePage() {
             </Link>
           </div>
 
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,20rem),1fr))] gap-6">
             {featuredProjects.map((project) => (
               <ProjectCard key={project.title} project={project} />
             ))}

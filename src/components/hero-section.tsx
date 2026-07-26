@@ -1,18 +1,13 @@
 import Link from "next/link";
 import { ArrowRight, FileDown } from "lucide-react";
 
+import { NewsletterButton } from "@/components/newsletter-button";
 import { Button } from "@/components/ui/button";
-import { cvPath, siteConfig } from "@/lib/constants";
+import { cvPath, hasCv, siteConfig } from "@/lib/constants";
 
 export function HeroSection() {
   return (
-    <section className="relative overflow-hidden border-b border-border">
-      {/* Faint radial wash — restrained, not a SaaS gradient. */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(60%_50%_at_50%_0%,hsl(var(--primary)/0.09),transparent_70%)]"
-      />
-
+    <section className="relative border-b border-border">
       <div className="container max-w-6xl py-16 md:py-24">
         <div className="flex flex-col-reverse items-start gap-10 md:flex-row md:items-center md:justify-between">
           <div className="max-w-2xl">
@@ -23,11 +18,12 @@ export function HeroSection() {
               {siteConfig.tagline}
             </p>
             <p className="mt-6 text-lg leading-8 text-muted-foreground">
-              I work on the reliability of large-scale power systems and the
-              computational methods that make them tractable — from
-              transient-stability solvers to machine learning on grid telemetry.
-              This site collects technical guides, research projects, and
-              writing aimed at people building the same kinds of systems.
+              I work at the intersection of systems theory, networks, signal
+              processing, and machine learning. What I enjoy most is carrying
+              that work past the paper — deploying it, breaking it under real
+              load, and living with the full-stack production build. This site
+              collects technical guides, projects, and writing for people who
+              like building the same way.
             </p>
 
             <div className="mt-8 flex flex-wrap gap-3">
@@ -37,18 +33,21 @@ export function HeroSection() {
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               </Button>
-              <Button asChild variant="outline" size="lg">
-                <a href={cvPath} download>
-                  <FileDown className="h-4 w-4" />
-                  View CV
-                </a>
-              </Button>
+              <NewsletterButton variant="outline" size="lg" />
+              {hasCv ? (
+                <Button asChild variant="outline" size="lg">
+                  <a href={cvPath} download>
+                    <FileDown className="h-4 w-4" />
+                    View CV
+                  </a>
+                </Button>
+              ) : null}
             </div>
           </div>
 
           {/* Placeholder tile until a real photo lands in public/images. */}
           <div
-            className="flex h-28 w-28 shrink-0 items-center justify-center rounded-full border border-border bg-gradient-to-br from-muted to-accent shadow-sm md:h-32 md:w-32"
+            className="flex h-28 w-28 shrink-0 items-center justify-center rounded-full border border-border bg-muted md:h-32 md:w-32"
             aria-hidden
           >
             <span className="font-mono text-3xl font-semibold tracking-tight text-muted-foreground">

@@ -5,41 +5,45 @@ import { FileDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { cvPath, siteConfig } from "@/lib/constants";
+import { cvPath, hasCv, siteConfig } from "@/lib/constants";
 
 export const metadata: Metadata = {
   title: "About",
   description: `About ${siteConfig.name} — background, research interests, and academic history.`,
 };
 
-// TODO: replace placeholder education history with real entries.
-const education = [
+/** Education and early professional experience, most recent first. */
+const timeline = [
   {
-    period: "0000 – 0000",
-    degree: "Ph.D., Electrical Engineering",
-    institution: "[Institution]",
-    detail: "Dissertation on nonlinear dynamics in power networks.",
+    period: "1998 – 2002",
+    title: "Ph.D., Electrical Engineering",
+    institution: "Washington State University, Pullman, WA",
   },
   {
-    period: "0000 – 0000",
-    degree: "M.S., Electrical Engineering",
-    institution: "[Institution]",
-    detail: "Focus on control systems and numerical methods.",
+    period: "1996 – 1998",
+    title: "M.Sc., Electrical Engineering",
+    institution: "Indian Institute of Science, Bangalore, India",
   },
   {
-    period: "0000 – 0000",
-    degree: "B.Tech., Electrical Engineering",
-    institution: "[Institution]",
-    detail: "",
+    period: "1995 – 1996",
+    title: "Research Engineer",
+    institution: "GE, Bangalore, India",
+  },
+  {
+    period: "1991 – 1995",
+    title: "B.S., Electrical Engineering",
+    institution:
+      "Visvesvaraya National Institute of Technology, Nagpur, India",
   },
 ];
 
 const researchInterests = [
-  "Power system dynamics and stability",
-  "Nonlinear systems and bifurcation analysis",
-  "Machine learning for grid telemetry",
-  "High-performance scientific computing",
-  "Renewable integration and forecasting",
+  "Systems theory and nonlinear dynamics",
+  "Networks and complex interconnected systems",
+  "Signal processing",
+  "Machine learning and applied AI",
+  "Production ML systems and deployment",
+  "Full-stack engineering for research software",
 ];
 
 const skills = [
@@ -67,10 +71,12 @@ export default function AboutPage() {
       <header>
         <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">About</h1>
         <p className="mt-3 text-base font-medium text-primary">
-          {siteConfig.title}, {siteConfig.department}
+          {siteConfig.title}
         </p>
-        <p className="text-sm text-muted-foreground">
-          {siteConfig.institution}
+        <p className="mt-1 text-sm leading-6 text-muted-foreground">
+          {siteConfig.department}
+          <br />
+          {siteConfig.college} · {siteConfig.institution}
         </p>
       </header>
 
@@ -80,25 +86,27 @@ export default function AboutPage() {
         <h2 className="text-xl font-semibold tracking-tight">Biography</h2>
         <div className="mt-4 space-y-5 leading-7 text-muted-foreground">
           <p>
-            {/* TODO: replace with real biography. */}
-            I am {siteConfig.title} at {siteConfig.institution}, where my work
-            centers on the dynamics and stability of large electric power
-            networks. Much of it sits at the boundary between classical systems
-            theory and modern computational practice — questions that are well
-            posed analytically but only become answerable at scale with careful
-            numerical work.
+            I am {siteConfig.title} in the{" "}
+            {siteConfig.department} at {siteConfig.institution}, where my work
+            sits at the intersection of systems theory, networks, signal
+            processing, and machine learning. These areas share a common spine —
+            understanding how structure and dynamics interact in complex systems
+            — and the interesting problems tend to live where they overlap.
           </p>
           <p>
-            My group builds simulation tools and data-driven models for grid
-            operation, with a recent emphasis on how renewable generation
-            changes the assumptions underpinning conventional stability
-            analysis. Alongside research, I hold an administrative appointment
-            as Associate Dean.
+            What I care about beyond the analysis is what happens when it leaves
+            the notebook. I like deploying things: standing up the
+            infrastructure, wiring the data path end to end, and finding out
+            which assumptions survive contact with production. A model that runs
+            once on a workstation and a model that serves real traffic are
+            different engineering objects, and the gap between them is where
+            most of the practical difficulty lives.
           </p>
           <p>
-            I write technical guides because the infrastructure knowledge that
-            research computing depends on is rarely written down in a form that
-            is useful to the next person who needs it.
+            That taste for the full-stack build is why this site exists. I write
+            technical guides because the infrastructure knowledge real systems
+            depend on is rarely written down in a form that is useful to the
+            next person who needs it.
           </p>
         </div>
       </section>
@@ -126,18 +134,22 @@ export default function AboutPage() {
 
       <section>
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <h2 className="text-xl font-semibold tracking-tight">Education</h2>
-          <Button asChild variant="outline" size="sm">
-            <a href={cvPath} download>
-              <FileDown className="h-4 w-4" />
-              Full CV
-            </a>
-          </Button>
+          <h2 className="text-xl font-semibold tracking-tight">
+            Education &amp; Early Career
+          </h2>
+          {hasCv ? (
+            <Button asChild variant="outline" size="sm">
+              <a href={cvPath} download>
+                <FileDown className="h-4 w-4" />
+                Full CV
+              </a>
+            </Button>
+          ) : null}
         </div>
 
         <ol className="mt-6 space-y-6 border-l border-border pl-6">
-          {education.map((entry) => (
-            <li key={entry.degree} className="relative">
+          {timeline.map((entry) => (
+            <li key={`${entry.period}-${entry.title}`} className="relative">
               <span
                 className="absolute -left-[1.6875rem] top-1.5 h-2.5 w-2.5 rounded-full border-2 border-background bg-border"
                 aria-hidden
@@ -146,16 +158,11 @@ export default function AboutPage() {
                 {entry.period}
               </p>
               <h3 className="mt-1 font-medium text-foreground">
-                {entry.degree}
+                {entry.title}
               </h3>
               <p className="text-sm text-muted-foreground">
                 {entry.institution}
               </p>
-              {entry.detail ? (
-                <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                  {entry.detail}
-                </p>
-              ) : null}
             </li>
           ))}
         </ol>
