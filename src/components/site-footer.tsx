@@ -9,7 +9,7 @@ import {
 import { NewsletterButton } from "@/components/newsletter-button";
 import {
   isPlaceholderLink,
-  newsletter,
+  newsletters,
   siteConfig,
   socialLinks,
 } from "@/lib/constants";
@@ -27,10 +27,14 @@ export function SiteFooter() {
     <footer className="border-t border-border">
       <div className="container flex max-w-6xl flex-col items-center justify-between gap-3 border-b border-border py-6 sm:flex-row">
         <p className="text-sm text-muted-foreground">
-          <span className="font-medium text-foreground">
-            {newsletter.name}
-          </span>{" "}
-          — writing on machine learning and the systems that run it.
+          Newsletters on machine learning, systems, and shipping software —{" "}
+          <Link
+            href="/writing"
+            className="font-medium text-foreground underline underline-offset-4"
+          >
+            {newsletters.map((n) => n.name).join(" and ")}
+          </Link>
+          .
         </p>
         <NewsletterButton variant="outline" size="sm" compact />
       </div>

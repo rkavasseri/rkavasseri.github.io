@@ -8,7 +8,7 @@ import { NewsletterButton } from "@/components/newsletter-button";
 import { Separator } from "@/components/ui/separator";
 import {
   isPlaceholderLink,
-  newsletter,
+  publishedNewsletters,
   siteConfig,
   socialLinks,
 } from "@/lib/constants";
@@ -54,17 +54,30 @@ export default function ContactPage() {
       </section>
 
       <section className="mt-8">
-        <h2 className="mb-3 text-sm font-medium text-foreground">Newsletter</h2>
-        <div className="flex flex-col items-start gap-3 rounded-lg border border-border bg-card p-4 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm leading-6 text-muted-foreground">
-            <span className="font-medium text-foreground">
-              {newsletter.name}
-            </span>{" "}
-            — occasional writing on machine learning and the systems that run
-            it.
-          </p>
-          <NewsletterButton variant="outline" size="sm" compact />
-        </div>
+        <h2 className="mb-3 text-sm font-medium text-foreground">
+          Newsletters
+        </h2>
+        <ul className="grid gap-3">
+          {publishedNewsletters.map((publication) => (
+            <li
+              key={publication.name}
+              className="flex flex-col items-start gap-3 rounded-lg border border-border bg-card p-4 sm:flex-row sm:items-center sm:justify-between"
+            >
+              <p className="text-sm leading-6 text-muted-foreground">
+                <span className="font-medium text-foreground">
+                  {publication.name}
+                </span>{" "}
+                on {publication.platform}
+              </p>
+              <NewsletterButton
+                publication={publication}
+                variant="outline"
+                size="sm"
+                compact
+              />
+            </li>
+          ))}
+        </ul>
       </section>
 
       <section className="mt-8">

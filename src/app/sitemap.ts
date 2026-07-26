@@ -6,7 +6,14 @@ import { getAllGuides } from "@/lib/mdx";
 export const dynamic = "force-static";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const routes = ["", "/guides", "/projects", "/about", "/contact"].map(
+  const routes = [
+    "",
+    "/guides",
+    "/writing",
+    "/projects",
+    "/about",
+    "/contact",
+  ].map(
     (route) => ({
       url: `${siteConfig.url}${route}`,
       lastModified: new Date(),

@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { ArrowRight, FileDown } from "lucide-react";
 
-import { NewsletterButton } from "@/components/newsletter-button";
 import { Button } from "@/components/ui/button";
 import { cvPath, hasCv, siteConfig } from "@/lib/constants";
 
@@ -33,7 +32,12 @@ export function HeroSection() {
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               </Button>
-              <NewsletterButton variant="outline" size="lg" />
+              <Button asChild variant="outline" size="lg">
+                <Link href="/writing">
+                  Read the Newsletters
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </Button>
               {hasCv ? (
                 <Button asChild variant="outline" size="lg">
                   <a href={cvPath} download>

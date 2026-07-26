@@ -18,13 +18,49 @@ export const siteConfig = {
   email: "rajesh.kavasseri@sdstate.edu",
 } as const;
 
-export const navLinks = [
+export interface NavLink {
+  title: string;
+  href: string;
+  description?: string;
+  /** Renders as an outbound link (new tab, external icon). */
+  external?: boolean;
+  /** When present, the item becomes a dropdown. */
+  items?: NavLink[];
+}
+
+export const navLinks: NavLink[] = [
   { title: "Home", href: "/" },
-  { title: "Guides", href: "/guides" },
+  {
+    title: "Writing",
+    href: "/writing",
+    items: [
+      {
+        title: "Guides",
+        href: "/guides",
+        description: "Long-form technical walkthroughs",
+      },
+      {
+        title: "Tech Notes",
+        href: "/writing#notes",
+        description: "Shorter working notes",
+      },
+      {
+        title: "Newsletters",
+        href: "/writing#newsletters",
+        description: "The Learning Machine · The Super Stack",
+      },
+      {
+        title: "Publications",
+        href: "https://scholar.google.com/citations?user=d4-J464AAAAJ",
+        description: "Peer-reviewed work on Google Scholar",
+        external: true,
+      },
+    ],
+  },
   { title: "Projects", href: "/projects" },
   { title: "About", href: "/about" },
   { title: "Contact", href: "/contact" },
-] as const;
+];
 
 export const socialLinks = {
   github: "https://github.com/rkavasseri",
@@ -33,12 +69,39 @@ export const socialLinks = {
   orcid: "https://orcid.org/0000-0002-4444-8136",
 } as const;
 
-/** "The Learning Machine" — LinkedIn newsletter. */
-export const newsletter = {
-  name: "The Learning Machine",
-  url: "https://www.linkedin.com/build-relation/newsletter-follow?entityUrn=7293009829223112704",
-  platform: "LinkedIn",
-} as const;
+export interface Newsletter {
+  name: string;
+  /** Subscribe/follow URL. Empty string hides the publication entirely. */
+  url: string;
+  platform: "LinkedIn" | "Substack";
+  /** Publication's own strapline, shown under the name. */
+  tagline?: string;
+  description: string;
+}
+
+export const newsletters: Newsletter[] = [
+  {
+    name: "The Learning Machine",
+    url: "https://www.linkedin.com/build-relation/newsletter-follow?entityUrn=7293009829223112704",
+    platform: "LinkedIn",
+    description:
+      "Notes on machine learning and the systems that run it — what works in production, what breaks, and why the gap between the two is where the engineering lives.",
+  },
+  {
+    name: "The Super Stack",
+    url: "https://thesuperstack.substack.com/",
+    platform: "Substack",
+    tagline: "Architecture Shapes Outcomes",
+    description:
+      "A systems-level examination of how architecture, constraint, and scale determine outcomes.",
+  },
+];
+
+/** Publications with a live URL, in nav and page order. */
+export const publishedNewsletters = newsletters.filter((n) => n.url !== "");
+
+/** Primary newsletter for compact CTAs (hero, footer). */
+export const newsletter = newsletters[0];
 
 /**
  * True when a link still carries its placeholder value — those are filtered
