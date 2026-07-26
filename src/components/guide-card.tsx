@@ -19,26 +19,26 @@ export function GuideCard({ guide }: { guide: GuideMeta }) {
       className="group h-full rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
     >
       <Card className="flex h-full flex-col transition-all duration-200 group-hover:-translate-y-1 group-hover:border-primary/40 group-hover:shadow-md">
-        <CardHeader className="flex-none">
+        <CardHeader className="flex-none space-y-1.5 p-5 pb-3">
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <time dateTime={guide.date}>{formatDate(guide.date)}</time>
             <span aria-hidden>·</span>
             <span>{guide.readTime} min read</span>
           </div>
-          <CardTitle className="text-lg leading-snug transition-colors group-hover:text-primary">
+          <CardTitle className="text-base leading-snug transition-colors group-hover:text-primary">
             {guide.title}
           </CardTitle>
         </CardHeader>
 
-        <CardContent className="flex-1">
-          <CardDescription className="leading-6">
+        <CardContent className="flex-1 p-5 pt-0">
+          <CardDescription className="line-clamp-3 text-sm leading-6">
             {guide.description}
           </CardDescription>
         </CardContent>
 
-        <CardFooter className="flex-none flex-wrap gap-2">
+        <CardFooter className="flex-none flex-wrap gap-1.5 p-5 pt-0">
           {guide.tags.map((tag) => (
-            <Badge key={tag} variant="secondary">
+            <Badge key={tag} variant="secondary" className="font-normal">
               {tag}
             </Badge>
           ))}
