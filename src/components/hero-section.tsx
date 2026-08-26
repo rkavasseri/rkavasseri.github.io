@@ -1,64 +1,65 @@
+import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, FileDown } from "lucide-react";
+import { ArrowDown, ArrowRight, ArrowUpRight } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
-import { cvPath, hasCv, siteConfig } from "@/lib/constants";
+import { siteConfig, socialLinks } from "@/lib/constants";
+
+const disciplines = ["Systems", "Networks", "Signals", "Machine learning"];
 
 export function HeroSection() {
   return (
-    <section className="relative border-b border-border">
-      <div className="container max-w-6xl py-16 md:py-24">
-        <div className="flex flex-col-reverse items-start gap-10 md:flex-row md:items-center md:justify-between">
-          <div className="max-w-2xl">
-            <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
-              {siteConfig.name}
-            </h1>
-            <p className="mt-3 text-base font-medium text-primary">
-              {siteConfig.tagline}
-            </p>
-            <p className="mt-6 text-lg leading-8 text-muted-foreground">
-              I work at the intersection of systems theory, networks, signal
-              processing, and machine learning. What I enjoy most is carrying
-              that work past the paper — deploying it, breaking it under real
-              load, and living with the full-stack production build. This site
-              collects technical guides, projects, and writing for people who
-              like building the same way.
-            </p>
+    <section className="relative overflow-hidden border-b border-foreground">
+      <div className="technical-grid absolute inset-0" aria-hidden />
+      <div className="relative mx-auto grid min-h-[calc(100vh-5rem)] max-w-[1440px] px-5 lg:grid-cols-12 lg:px-10">
+        <div className="flex flex-col justify-between border-x border-foreground bg-background/95 px-5 py-8 sm:px-10 lg:col-span-9 lg:py-12">
+          <div className="flex items-center justify-between gap-4 font-mono text-[10px] uppercase tracking-[.2em]">
+            <span className="flex items-center gap-3"><i className="h-2 w-2 bg-foreground" /> Professor · Engineer · Builder</span>
+            <span className="hidden sm:block">Brookings / South Dakota</span>
+          </div>
 
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Button asChild size="lg">
-                <Link href="/guides">
-                  Read Guides
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              </Button>
-              <Button asChild variant="outline" size="lg">
-                <Link href="/writing">
-                  Read the Newsletters
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              </Button>
-              {hasCv ? (
-                <Button asChild variant="outline" size="lg">
-                  <a href={cvPath} download>
-                    <FileDown className="h-4 w-4" />
-                    View CV
-                  </a>
-                </Button>
-              ) : null}
+          <div className="py-16 lg:py-20">
+            <p className="mb-6 font-mono text-[10px] font-medium uppercase tracking-[.22em] sm:text-xs">
+              Systems theory / Networks / Signal processing / ML
+            </p>
+            <h1 className="max-w-5xl text-[clamp(3.75rem,9.2vw,8.75rem)] font-semibold leading-[.84] tracking-[-.065em]">
+              Rajesh<br />Kavasseri<span aria-hidden>.</span>
+            </h1>
+            <p className="mt-9 max-w-3xl text-xl leading-8 md:text-2xl">
+              I study intelligent systems—and carry the work past the paper into software that has to survive the real world.
+            </p>
+            <div className="mt-9 flex flex-wrap gap-3">
+              <Link href="/guides" className="tech-button bg-foreground text-background">
+                Explore the work <ArrowRight size={17} />
+              </Link>
+              <Link href="/about" className="tech-button border border-foreground bg-background">
+                About me
+              </Link>
             </div>
           </div>
 
-          {/* Placeholder tile until a real photo lands in public/images. */}
-          <div
-            className="flex h-28 w-28 shrink-0 items-center justify-center rounded-full border border-border bg-muted md:h-32 md:w-32"
-            aria-hidden
-          >
-            <span className="font-mono text-3xl font-semibold tracking-tight text-muted-foreground">
-              RK
-            </span>
+          <div className="flex items-center justify-between border-t border-border pt-5 font-mono text-[10px] uppercase tracking-wider">
+            <span>Scroll to explore</span><ArrowDown size={16} />
           </div>
         </div>
+
+        <aside className="relative hidden overflow-hidden border-r border-neutral-950 bg-neutral-950 text-white dark:border-neutral-700 lg:col-span-3 lg:flex lg:flex-col lg:justify-between lg:p-8">
+          <div className="flex items-center justify-between font-mono text-[9px] uppercase tracking-[.16em] text-neutral-400">
+            <span>Profile / 001</span><span className="flex items-center gap-2 text-white"><i className="status-pulse h-1.5 w-1.5 bg-white" /> Active</span>
+          </div>
+          <div className="my-8">
+            <div className="relative aspect-[4/5] overflow-hidden border border-neutral-700 grayscale">
+              <Image src="/images/rk_pp.jpg" alt={`${siteConfig.name}, ${siteConfig.title}`} fill priority sizes="25vw" className="object-cover object-[50%_35%]" />
+              <div className="scan-lines absolute inset-0" aria-hidden />
+              <span className="absolute bottom-3 left-3 font-mono text-[8px] uppercase tracking-widest">RK / faculty profile</span>
+            </div>
+            <div className="mt-5 border border-neutral-700 font-mono text-[9px] uppercase tracking-wider">
+              {disciplines.map((item, index) => <div key={item} className="flex justify-between border-b border-neutral-700 px-3 py-3 last:border-0"><span className="text-neutral-400">0{index + 1} — {item}</span><span>+</span></div>)}
+            </div>
+          </div>
+          <a href={socialLinks.scholar} target="_blank" rel="noreferrer noopener" className="flex items-center justify-between border-t border-neutral-700 pt-4 font-mono text-[9px] uppercase tracking-widest text-neutral-400 hover:text-white">
+            Publications <ArrowUpRight size={14} />
+          </a>
+        </aside>
       </div>
     </section>
   );

@@ -21,7 +21,6 @@ export const siteConfig = {
 export interface NavLink {
   title: string;
   href: string;
-  description?: string;
   /** Renders as an outbound link (new tab, external icon). */
   external?: boolean;
   /** When present, the item becomes a dropdown. */
@@ -34,25 +33,12 @@ export const navLinks: NavLink[] = [
     title: "Writing",
     href: "/writing",
     items: [
-      {
-        title: "Guides",
-        href: "/guides",
-        description: "Long-form technical walkthroughs",
-      },
-      {
-        title: "Tech Notes",
-        href: "/writing#notes",
-        description: "Shorter working notes",
-      },
-      {
-        title: "Newsletters",
-        href: "/writing#newsletters",
-        description: "The Learning Machine · The Super Stack",
-      },
+      { title: "Guides", href: "/guides" },
+      { title: "Tech Notes", href: "/writing#notes" },
+      { title: "Newsletters", href: "/writing#newsletters" },
       {
         title: "Publications",
         href: "https://scholar.google.com/citations?user=d4-J464AAAAJ",
-        description: "Peer-reviewed work on Google Scholar",
         external: true,
       },
     ],

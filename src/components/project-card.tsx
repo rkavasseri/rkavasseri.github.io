@@ -1,89 +1,15 @@
-import Image from "next/image";
 import Link from "next/link";
-import { ExternalLink, FileText, Lock } from "lucide-react";
-
+import { ArrowRight, ExternalLink, FileText, Lock } from "lucide-react";
 import { GitHubIcon } from "@/components/brand-icons";
-
-import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import type { Project } from "@/lib/projects";
 
-const linkMeta = [
-  { key: "github", label: "Code", icon: GitHubIcon },
-  { key: "demo", label: "Demo", icon: ExternalLink },
-  { key: "paper", label: "Paper", icon: FileText },
-] as const;
+const links = [{ key: "github", label: "Code", icon: GitHubIcon }, { key: "demo", label: "Launch", icon: ExternalLink }, { key: "paper", label: "Paper", icon: FileText }] as const;
 
-export function ProjectCard({ project }: { project: Project }) {
-  return (
-    <Card className="flex h-full flex-col overflow-hidden transition-all duration-200 hover:-translate-y-1 hover:border-primary/40 hover:shadow-md">
-      {/* Only render a media band when there's an actual image — an empty
-          16:9 placeholder ate ~40% of the card height for no information. */}
-      {project.image ? (
-        <div className="relative aspect-[16/9] border-b border-border bg-muted">
-          <Image
-            src={project.image}
-            alt=""
-            fill
-            className="object-cover"
-            sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-          />
-        </div>
-      ) : null}
-
-      <CardHeader className="flex-none space-y-0 p-5 pb-3">
-        <CardTitle className="text-base leading-snug">
-          {project.title}
-        </CardTitle>
-      </CardHeader>
-
-      <CardContent className="flex flex-1 flex-col gap-3 p-5 pt-0">
-        <CardDescription className="line-clamp-5 text-sm leading-6">
-          {project.description}
-        </CardDescription>
-        <div className="mt-auto flex flex-wrap gap-1.5">
-          {project.tech.map((tech) => (
-            <Badge key={tech} variant="secondary" className="font-normal">
-              {tech}
-            </Badge>
-          ))}
-        </div>
-      </CardContent>
-
-      {project.links || project.status ? (
-        <CardFooter className="flex-none items-center gap-4 border-t border-border/60 p-5 py-3">
-          {linkMeta.map(({ key, label, icon: Icon }) => {
-            const href = project.links?.[key];
-            if (!href) return null;
-            const linkLabel = project.linkLabels?.[key] ?? label;
-            return (
-              <Link
-                key={key}
-                href={href}
-                target="_blank"
-                rel="noreferrer noopener"
-                className="inline-flex items-center gap-1.5 rounded text-sm text-muted-foreground transition-colors hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-              >
-                <Icon className="h-4 w-4" />
-                {linkLabel}
-              </Link>
-            );
-          })}
-          {project.status ? (
-            <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
-              <Lock className="h-3.5 w-3.5" aria-hidden />
-              {project.status}
-            </span>
-          ) : null}
-        </CardFooter>
-      ) : null}
-    </Card>
-  );
+export function ProjectCard({ project, index = 0 }: { project: Project; index?: number }) {
+  return <article className="group grid border-t border-neutral-300 py-8 dark:border-neutral-700 md:grid-cols-12 md:gap-6">
+    <div className="mb-5 md:col-span-2 md:mb-0"><span className="font-mono text-[10px] uppercase tracking-widest">SYS—0{index + 1}</span></div>
+    <div className="md:col-span-3"><div className="project-grid relative aspect-[4/3] overflow-hidden border border-neutral-300 bg-white dark:border-neutral-600 dark:bg-neutral-900 dark:text-white"><span className="absolute right-4 top-4 font-mono text-[9px] font-medium uppercase tracking-widest">{project.status || "Operational"}</span><span className="absolute bottom-4 left-4 text-6xl font-semibold tracking-[-.06em]">0{index + 1}</span><div className="absolute bottom-4 left-4 right-4 h-px bg-current" /><div className="absolute bottom-4 left-[38%] h-1/2 w-px bg-current" /></div></div>
+    <div className="mt-6 md:col-span-5 md:mt-0"><p className="font-mono text-[9px] font-medium uppercase tracking-widest text-neutral-600 dark:text-neutral-300">Applied intelligence / production</p><h3 className="mt-3 text-3xl font-semibold tracking-[-.035em]">{project.title}</h3><p className="mt-4 max-w-xl leading-7 text-neutral-600 dark:text-neutral-300">{project.description}</p><div className="mt-6 flex flex-wrap gap-2">{project.tech.map(t => <span key={t} className="border border-neutral-300 px-2.5 py-1 font-mono text-[9px] font-medium uppercase tracking-wider dark:border-neutral-600">{t}</span>)}</div></div>
+    <div className="mt-7 flex flex-wrap items-start gap-4 md:col-span-2 md:mt-0 md:justify-end">{links.map(({ key, label, icon: Icon }) => { const href = project.links?.[key]; return href ? <Link key={key} href={href} target="_blank" rel="noreferrer noopener" className="inline-flex items-center gap-2 text-sm font-semibold hover:underline"><Icon className="h-4 w-4" />{project.linkLabels?.[key] ?? label}</Link> : null; })}{project.status && !project.links?.github ? <span className="inline-flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-300"><Lock size={14} />{project.status}</span> : null}<Link href="/projects" className="inline-flex items-center gap-2 text-sm font-semibold hover:underline">Details <ArrowRight size={15} /></Link></div>
+  </article>;
 }

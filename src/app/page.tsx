@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ArrowUpRight } from "lucide-react";
 
 import { GuideCard } from "@/components/guide-card";
 import { HeroSection } from "@/components/hero-section";
@@ -7,68 +7,47 @@ import { ProjectCard } from "@/components/project-card";
 import { getAllGuides } from "@/lib/mdx";
 import { projects } from "@/lib/projects";
 
+function SectionHeading({ label, title, description }: { label: string; title: string; description?: string }) {
+  return <div className="grid gap-6 lg:grid-cols-12"><p className="font-mono text-[10px] uppercase tracking-[.2em] lg:col-span-3">{label}</p><div className="lg:col-span-9"><h2 className="max-w-4xl text-4xl font-semibold leading-[.95] tracking-[-.04em] sm:text-6xl">{title}</h2>{description && <p className="mt-6 max-w-2xl text-lg leading-8 text-muted-foreground">{description}</p>}</div></div>;
+}
+
 export default function HomePage() {
   const featuredGuides = getAllGuides().slice(0, 3);
   const featuredProjects = projects.filter((p) => p.featured).slice(0, 3);
 
-  return (
-    <>
-      <HeroSection />
+  return <>
+    <HeroSection />
 
-      <section className="container max-w-6xl py-12 md:py-20">
-        <div className="mb-8 flex items-end justify-between gap-4">
-          <div>
-            <h2 className="text-2xl font-semibold tracking-tight">
-              Featured Guides
-            </h2>
-            <p className="mt-2 text-muted-foreground">
-              Long-form technical writing on infrastructure and applied ML.
-            </p>
-          </div>
-          <Link
-            href="/guides"
-            className="hidden shrink-0 items-center gap-1 text-sm font-medium text-primary hover:underline sm:inline-flex"
-          >
-            All guides
-            <ArrowRight className="h-4 w-4" />
-          </Link>
+    <section className="mx-auto max-w-[1440px] px-5 py-20 lg:px-10 lg:py-28">
+      <SectionHeading label="Writing / 01" title="Notes from the workbench." description="Practical, long-form guides on infrastructure, machine learning, and the engineering required to make research operational." />
+      <div className="mt-14 grid border-l border-t border-border md:grid-cols-3">
+        {featuredGuides.map((guide, index) => <GuideCard key={guide.slug} guide={guide} index={index} />)}
+      </div>
+      <Link href="/guides" className="mt-8 inline-flex items-center gap-2 text-sm font-semibold hover:underline hover:underline-offset-4">All technical guides <ArrowRight size={16} /></Link>
+    </section>
+
+    <section className="bg-neutral-100 text-neutral-950 dark:bg-neutral-900 dark:text-neutral-50">
+      <div className="mx-auto max-w-[1440px] px-5 py-20 lg:px-10 lg:py-28">
+        <SectionHeading label="Selected work / 02" title="Build the system. Show the work." description="Research software and production systems built at the intersection of retrieval, agents, infrastructure, and applied machine learning." />
+        <div className="mt-14 border-b border-neutral-300 dark:border-neutral-700">
+          {featuredProjects.map((project, index) => <ProjectCard key={project.title} project={project} index={index} />)}
         </div>
+        <Link href="/projects" className="mt-8 inline-flex items-center gap-2 text-sm font-semibold hover:underline hover:underline-offset-4">View all projects <ArrowRight size={16} /></Link>
+      </div>
+    </section>
 
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,20rem),1fr))] gap-6">
-          {featuredGuides.map((guide) => (
-            <GuideCard key={guide.slug} guide={guide} />
-          ))}
-        </div>
-      </section>
+    <section className="bg-foreground text-background">
+      <div className="mx-auto grid max-w-[1440px] gap-12 px-5 py-20 lg:grid-cols-12 lg:px-10 lg:py-28">
+        <div className="lg:col-span-7"><p className="font-mono text-[10px] uppercase tracking-[.2em] text-neutral-500">Working philosophy / 03</p><h2 className="mt-7 text-5xl font-semibold leading-[.92] tracking-[-.05em] sm:text-7xl">Theory earns its keep<br /><span className="text-neutral-500">when it ships.</span></h2></div>
+        <div className="flex flex-col justify-between lg:col-span-5"><p className="max-w-lg text-lg leading-8 text-neutral-400">The most interesting problems cross boundaries: models and infrastructure, research and product, clean abstractions and messy operational reality.</p><Link href="/about" className="mt-10 flex items-center justify-between border-t border-neutral-700 pt-5 font-mono text-[10px] uppercase tracking-[.18em] hover:text-neutral-400">More about my work <ArrowUpRight size={16} /></Link></div>
+      </div>
+    </section>
 
-      <section className="border-t border-border">
-        <div className="container max-w-6xl py-12 md:py-20">
-          <div className="mb-8 flex items-end justify-between gap-4">
-            <div>
-              <h2 className="text-2xl font-semibold tracking-tight">
-                Selected Projects
-              </h2>
-              <p className="mt-2 text-muted-foreground">
-                Things I&apos;ve built and shipped — research software and
-                production systems.
-              </p>
-            </div>
-            <Link
-              href="/projects"
-              className="hidden shrink-0 items-center gap-1 text-sm font-medium text-primary hover:underline sm:inline-flex"
-            >
-              All projects
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,20rem),1fr))] gap-6">
-            {featuredProjects.map((project) => (
-              <ProjectCard key={project.title} project={project} />
-            ))}
-          </div>
-        </div>
-      </section>
-    </>
-  );
+    <section className="noise-lines mx-auto max-w-[1440px] px-5 py-24 text-center lg:px-10 lg:py-36">
+      <p className="font-mono text-[10px] uppercase tracking-[.2em]">Collaboration / open</p>
+      <h2 className="mx-auto mt-7 max-w-5xl text-5xl font-semibold leading-[.92] tracking-[-.05em] sm:text-8xl">Bring me a problem worth solving.</h2>
+      <p className="mx-auto mt-7 max-w-2xl text-lg leading-8 text-muted-foreground">Research, engineering, systems, or an idea that refuses to fit neatly in one box.</p>
+      <Link href="/contact" className="tech-button mt-9 bg-foreground text-background">Start a conversation <ArrowUpRight size={17} /></Link>
+    </section>
+  </>;
 }

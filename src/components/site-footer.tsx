@@ -24,8 +24,8 @@ const iconLinks = [
 
 export function SiteFooter() {
   return (
-    <footer className="border-t border-border">
-      <div className="container flex max-w-6xl flex-col items-center justify-between gap-3 border-b border-border py-6 sm:flex-row">
+    <footer className="border-t border-foreground">
+      <div className="mx-auto flex max-w-[1440px] flex-col justify-between gap-6 border-x border-border px-5 py-8 sm:flex-row sm:items-center lg:px-10">
         <p className="text-sm text-muted-foreground">
           Newsletters on machine learning, systems, and shipping software —{" "}
           <Link
@@ -39,8 +39,8 @@ export function SiteFooter() {
         <NewsletterButton variant="outline" size="sm" compact />
       </div>
 
-      <div className="container flex max-w-6xl flex-col items-center justify-between gap-4 py-8 sm:flex-row">
-        <p className="text-sm text-muted-foreground">
+      <div className="mx-auto flex max-w-[1440px] flex-col justify-between gap-4 border-x border-t border-border px-5 py-8 sm:flex-row sm:items-center lg:px-10">
+        <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
           © {new Date().getFullYear()} {siteConfig.name}. Built with{" "}
           <Link
             href="https://nextjs.org"

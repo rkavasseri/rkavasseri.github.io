@@ -4,55 +4,51 @@
 
 @layer base {
   :root {
-    /* Light mode — clean, slightly warm whites */
+    /* Site palette: editorial black, white, and neutral gray only. */
     --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
+    --foreground: 0 0% 4%;
     --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
+    --card-foreground: 0 0% 4%;
     --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    /* Neutral slate ink rather than a system blue. 11.06:1 on white. */
-    --primary: 215 28% 25%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 215 28% 25%;
-    --muted: 210 40% 96%;
-    /* Raised from 47% — 47% only reached 4.30:1 against --muted (AA fail). */
-    --muted-foreground: 215 20% 38%;
-    --accent: 210 40% 96%;
-    --accent-foreground: 215 28% 25%;
+    --popover-foreground: 0 0% 4%;
+    --primary: 0 0% 4%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 12%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 36%;
+    --accent: 0 0% 92%;
+    --accent-foreground: 0 0% 4%;
     --destructive: 0 72% 42%;
     --destructive-foreground: 210 40% 98%;
     /* Strengthened for low-vision users. Decorative separators, so 1.4.11's
        3:1 does not strictly apply — controls carry their own focus rings. */
-    --border: 215 20% 78%;
-    --input: 215 20% 62%;
-    --ring: 215 28% 25%;
-    --radius: 0.5rem;
+    --border: 0 0% 72%;
+    --input: 0 0% 48%;
+    --ring: 0 0% 4%;
+    --radius: 0rem;
   }
 
   .dark {
-    /* Dark mode — deep, not pure black */
-    --background: 224 71% 4%;
-    --foreground: 213 31% 91%;
-    --card: 224 71% 4%;
-    --card-foreground: 213 31% 91%;
-    --popover: 224 71% 4%;
-    --popover-foreground: 213 31% 91%;
-    /* Light slate ink for dark mode. 13.59:1 on the dark background. */
-    --primary: 213 27% 84%;
-    --primary-foreground: 222 47% 11%;
-    --secondary: 222 47% 11%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 223 47% 11%;
-    --muted-foreground: 215 20% 65%;
-    --accent: 216 34% 17%;
-    --accent-foreground: 210 40% 98%;
+    --background: 0 0% 4%;
+    --foreground: 0 0% 96%;
+    --card: 0 0% 6%;
+    --card-foreground: 0 0% 96%;
+    --popover: 0 0% 6%;
+    --popover-foreground: 0 0% 96%;
+    --primary: 0 0% 96%;
+    --primary-foreground: 0 0% 4%;
+    --secondary: 0 0% 11%;
+    --secondary-foreground: 0 0% 96%;
+    --muted: 0 0% 12%;
+    --muted-foreground: 0 0% 66%;
+    --accent: 0 0% 18%;
+    --accent-foreground: 0 0% 98%;
     --destructive: 0 63% 45%;
     --destructive-foreground: 210 40% 98%;
-    --border: 216 20% 30%;
-    --input: 215 20% 40%;
-    --ring: 213 27% 84%;
+    --border: 0 0% 32%;
+    --input: 0 0% 48%;
+    --ring: 0 0% 92%;
   }
 }
 
@@ -65,6 +61,8 @@
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
+
+  ::selection { background: hsl(var(--foreground)); color: hsl(var(--background)); }
 
   /* Anchor targets clear the sticky header when jumping to a heading. */
   :target {
@@ -97,9 +95,21 @@
 }
 
 @layer components {
+  .technical-grid { background-image: linear-gradient(to right, hsl(var(--foreground) / .075) 1px, transparent 1px), linear-gradient(to bottom, hsl(var(--foreground) / .075) 1px, transparent 1px); background-size: 48px 48px; }
+  .noise-lines { background-image: repeating-linear-gradient(0deg, transparent, transparent 5px, hsl(var(--foreground) / .045) 6px); }
+  .scan-lines { background-image: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(255,255,255,.08) 4px); }
+  .project-grid { background-image: linear-gradient(rgba(115,115,115,.18) 1px, transparent 1px), linear-gradient(90deg, rgba(115,115,115,.18) 1px, transparent 1px); background-size: 30px 30px; }
+  .tech-button { @apply inline-flex min-h-12 items-center justify-center gap-2 px-5 text-sm font-semibold transition-colors; }
+  .tech-button:hover { text-decoration: underline; text-underline-offset: 4px; }
+  .status-pulse { animation: status-pulse 1.4s ease-in-out infinite; }
+}
+
+@keyframes status-pulse { 0%, 100% { opacity: .3; } 50% { opacity: 1; } }
+
+@layer components {
   /* Prose overrides: align @tailwindcss/typography with shadcn tokens. */
   .prose-site {
-    @apply prose prose-slate max-w-none dark:prose-invert;
+    @apply prose prose-neutral max-w-none dark:prose-invert;
     @apply prose-headings:font-semibold prose-headings:tracking-tight prose-headings:text-foreground;
     @apply prose-p:leading-7 prose-p:text-muted-foreground;
     @apply prose-li:text-muted-foreground prose-strong:text-foreground;

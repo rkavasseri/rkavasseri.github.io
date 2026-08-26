@@ -32,11 +32,11 @@ function isActive(pathname: string, link: NavLink): boolean {
 }
 
 const linkBase =
-  "relative rounded-md px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background";
+  "relative px-2 py-2 text-xs font-medium uppercase tracking-wide transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
 function ActiveUnderline() {
   return (
-    <span className="absolute inset-x-3 -bottom-px h-0.5 rounded-full bg-foreground" />
+    <span className="absolute inset-x-2 -bottom-[21px] h-px bg-foreground" />
   );
 }
 
@@ -45,63 +45,63 @@ export function SiteHeader() {
   const [open, setOpen] = React.useState(false);
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 max-w-6xl items-center justify-between">
+    <header className="sticky top-0 z-50 w-full border-b border-foreground bg-background/95 backdrop-blur-md">
+      <div className="mx-auto flex h-20 max-w-[1440px] items-center justify-between px-5 lg:px-10">
         <Link
           href="/"
-          className="text-base font-semibold tracking-tight transition-colors hover:text-primary"
+          className="flex items-center gap-3 hover:underline hover:underline-offset-4"
         >
-          {siteConfig.name}
+          <span className="grid h-10 w-10 place-items-center bg-foreground font-mono text-xs font-bold text-background">RK</span>
+          <span className="max-w-[170px] text-[11px] font-semibold uppercase leading-[1.2] tracking-wide">Rajesh Kavasseri<br/><span className="text-muted-foreground">Professor / Engineer</span></span>
         </Link>
 
-        <nav className="hidden items-center gap-1 md:flex" aria-label="Main">
+        <nav className="hidden items-center gap-4 md:flex" aria-label="Main">
           {navLinks.map((link) => {
             const active = isActive(pathname, link);
 
             if (link.items) {
               return (
                 <DropdownMenu key={link.href}>
-                  <DropdownMenuTrigger
-                    className={cn(
-                      linkBase,
-                      "inline-flex items-center gap-1 data-[state=open]:text-foreground",
-                      active
-                        ? "text-foreground"
-                        : "text-muted-foreground hover:text-foreground"
-                    )}
-                  >
-                    {link.title}
-                    <ChevronDown
-                      className="h-3.5 w-3.5 transition-transform duration-200 [[data-state=open]>&]:rotate-180"
-                      aria-hidden
-                    />
-                    {active ? <ActiveUnderline /> : null}
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      className={cn(
+                        linkBase,
+                        "group inline-flex items-center gap-1 data-[state=open]:text-foreground",
+                        active
+                          ? "text-foreground"
+                          : "text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      {link.title}
+                      <ChevronDown
+                        className="h-3.5 w-3.5 transition-transform duration-200 group-data-[state=open]:rotate-180"
+                        aria-hidden
+                      />
+                      {active ? <ActiveUnderline /> : null}
+                    </button>
                   </DropdownMenuTrigger>
 
-                  <DropdownMenuContent align="start">
+                  <DropdownMenuContent align="start" className="min-w-44">
                     {link.items.map((child) => (
-                      <DropdownMenuItem key={child.href} asChild>
+                      <DropdownMenuItem
+                        key={child.href}
+                        asChild
+                        className="cursor-pointer text-muted-foreground focus:text-foreground"
+                      >
                         <Link
                           href={child.href}
                           target={child.external ? "_blank" : undefined}
                           rel={
                             child.external ? "noreferrer noopener" : undefined
                           }
-                          className="flex-col items-start gap-0.5"
                         >
-                          <span className="flex items-center gap-1 font-medium">
-                            {child.title}
-                            {child.external ? (
-                              <ArrowUpRight
-                                className="h-3 w-3 text-muted-foreground"
-                                aria-hidden
-                              />
-                            ) : null}
-                          </span>
-                          {child.description ? (
-                            <span className="text-xs leading-snug text-muted-foreground">
-                              {child.description}
-                            </span>
+                          {child.title}
+                          {child.external ? (
+                            <ArrowUpRight
+                              className="ml-auto opacity-60"
+                              aria-hidden
+                            />
                           ) : null}
                         </Link>
                       </DropdownMenuItem>
