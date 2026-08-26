@@ -30,13 +30,23 @@ Every tensor in your model — weights, activations, gradients, optimizer states
        └─────────────┘          └─────────────┘
 ```
 
-Concretely, switching from FP32 to BF16 for training typically gives you:
+Concretely, moving eligible operations from FP32 to BF16 for training commonly gives you:
 
-- **2× the speed** — the GPU's tensor cores process twice as many operations per cycle.
-- **Half the memory** — each number takes 2 bytes instead of 4, so you can double your batch size or train a model twice as large.
-- **Negligible accuracy loss** — with proper mixed precision technique, final model quality is virtually identical.
+- **Higher Tensor Core throughput** — BF16 Tensor Core peaks are roughly 2× the TF32 figure on A100 and H100, though realized speedup depends on the workload.
+- **Lower memory traffic** — each value occupies 2 bytes instead of 4, which reduces activation memory and bandwidth pressure.
+- **Small accuracy impact for many workloads** — with sound mixed-precision technique, final model quality is often close to an FP32 baseline, but this should be measured rather than assumed.
 
 That's not a free lunch — it's an engineering lunch. Understanding *why* it works (and when it doesn't) is what this guide is about.
+
+<Callout type="info">
+  Throughout this guide it helps to separate five different kinds of claim:
+  a **format property** is fixed by the representation; a **hardware
+  capability** depends on the GPU architecture; a **framework policy** depends
+  on the PyTorch/CUDA version; a **training recipe** depends on the
+  implementation; and **observed model quality** must be measured
+  experimentally. Most precision confusion comes from treating one of these as
+  though it were another.
+</Callout>
 
 ---
 
@@ -95,7 +105,7 @@ FP32  ┌─┬──────────┬──────────�
       └─┴──────────┴───────────────────────────┘
 
 TF32  ┌─┬──────────┬────────────┐
-      │S│  Exp (8) │  Mant (10) │  19 bits (stored as 32, computed as 19)
+      │S│  Exp (8) │  Mant (10) │  FP32 storage; reduced-precision Tensor Core input
       └─┴──────────┴────────────┘
 
 FP16  ┌─┬───────┬────────────┐
@@ -115,21 +125,28 @@ FP8   ┌─┬───────┬────┐
       └─┴───────┴────┘
 ```
 
+> **TF32 is not a 19-bit storage datatype.** Tensors remain FP32 in memory. For
+> eligible Tensor Core operations, FP32 inputs are rounded to TF32 precision —
+> an 8-bit exponent and 10 explicit fraction bits — while accumulation is
+> typically performed in FP32.
+
 ### 3.2 Detailed Comparison
 
-| Format | Bits | Exponent | Mantissa | Dynamic Range | Decimal Digits | GPU Support |
+| Format | Bits | Exponent | Fraction | Dynamic Range | Approx. Decimal Precision | GPU Support |
 |---|---|---|---|---|---|---|
-| **FP64** | 64 | 11 | 52 | ±10^308 | ~15–16 | All (slow) |
-| **FP32** | 32 | 8 | 23 | ±3.4×10^38 | ~7 | All |
-| **TF32** | 19* | 8 | 10 | ±3.4×10^38 | ~3 | A100, H100 |
-| **FP16** | 16 | 5 | 10 | ±65,504 | ~3 | All modern |
-| **BF16** | 16 | 8 | 7 | ±3.4×10^38 | ~2 | A100, H100 |
-| **FP8 E4M3** | 8 | 4 | 3 | ±448 | ~1 | H100 only |
-| **FP8 E5M2** | 8 | 5 | 2 | ±57,344 | &lt;1 | H100 only |
-| **INT8** | 8 | — | — | -128 to 127 | — | All modern |
-| **INT4** | 4 | — | — | -8 to 7 | — | H100 (limited) |
+| **FP64** | 64 | 11 | 52 | ±1.8×10^308 | ~15–16 digits | Broad GPU support; throughput varies greatly |
+| **FP32** | 32 | 8 | 23 | ±3.4×10^38 | ~7 digits | Broad |
+| **TF32** | FP32 storage* | 8 | 10 used for Tensor Core input | FP32 range | ~3 digits input precision | NVIDIA Ampere and later |
+| **FP16** | 16 | 5 | 10 | ±65,504 | ~3 digits | Modern GPUs |
+| **BF16** | 16 | 8 | 7 | ~FP32 range | ~2–3 digits | NVIDIA Ampere and later; other modern accelerators |
+| **FP8 E4M3** | 8 | 4 | 3 | ±448 | ~1–2 digits | Supported FP8 hardware, including NVIDIA Ada/Hopper/Blackwell |
+| **FP8 E5M2** | 8 | 5 | 2 | ±57,344 | ~1 digit | Supported FP8 hardware, including NVIDIA Ada/Hopper/Blackwell |
+| **INT8** | 8 | — | — | -128 to 127 signed | — | Broad |
+| **INT4** | 4 | — | — | -8 to 7 signed | — | Hardware/framework dependent |
 
-*TF32 is stored in 32-bit containers but only uses 19 bits of precision during computation.
+*TF32 uses FP32 tensors as inputs and storage. Eligible Tensor Core operations
+reduce the input significand precision while retaining FP32-like exponent range
+and typically accumulating into FP32.
 
 ### 3.3 Deep Dive: Each Format
 
@@ -137,12 +154,14 @@ FP8   ┌─┬───────┬────┐
 
 ```python
 x = torch.tensor(1.0, dtype=torch.float64)
-# 52-bit mantissa → ~15 decimal digits of precision
-# Used in: scientific computing, numerical solvers
-# NOT used in: ML training (too slow, too much memory, no benefit)
+
+# 52-bit fraction → ~15–16 decimal digits of precision
+# Common in: scientific computing, numerical solvers,
+#            numerical validation and precision-sensitive algorithms
+# Uncommon in: conventional deep neural-network training
 ```
 
-You will almost never use FP64 in ML. If your code uses `float64`, it's probably a bug — a tensor got promoted unintentionally.
+FP64 is uncommon in conventional deep-learning training because it doubles memory relative to FP32 and usually provides little model-quality benefit while substantially reducing throughput on many GPUs. It remains important in scientific ML, numerical solvers, ill-conditioned computations, validation, and applications where numerical precision is itself part of the problem. In a conventional neural-network pipeline, an unexpected `float64` tensor is often worth checking for accidental dtype promotion.
 
 #### FP32 (Single Precision)
 
@@ -160,22 +179,36 @@ The historical default for neural network training. Perfectly adequate for all M
 TF32 = FP32 range + FP16 precision
 ```
 
-TF32 is not a storage format — it's a **compute mode**. Your tensors are still stored as FP32 (32 bits in memory), but when the GPU performs matrix multiplications on the tensor cores, it silently rounds the mantissa from 23 bits to 10 bits. This makes matmuls ~3× faster with almost no accuracy impact.
+TF32 is not a storage format — it is a hardware compute mode for selected FP32 operations on NVIDIA Ampere and later GPUs. Tensors remain FP32 in memory. For eligible matrix multiplications and convolutions, Tensor Cores can use TF32-like input precision while retaining FP32 dynamic range and FP32 accumulation.
+
+<Callout type="warning">
+  **Do not assume TF32 has one global PyTorch default.** Matrix multiplication
+  and cuDNN operations have historically had different defaults, and PyTorch's
+  control API has evolved. In PyTorch 1.12 and later, the legacy
+  `torch.backends.cuda.matmul.allow_tf32` setting defaults to `False`, while
+  cuDNN TF32 has historically defaulted to `True`.
+</Callout>
 
 ```python
-# TF32 is ON by default in PyTorch 2.x on A100/H100
-# To verify or toggle:
-torch.backends.cuda.matmul.allow_tf32        # True by default
-torch.backends.cudnn.allow_tf32              # True by default
+# Current PyTorch exposes more explicit FP32 precision controls.
+# Exact availability depends on PyTorch version.
 
-# You don't need to change your code at all. The GPU handles it.
+torch.backends.cuda.matmul.fp32_precision = "tf32"
+torch.backends.cudnn.conv.fp32_precision = "tf32"
+
+# If strict IEEE FP32 behavior is required:
+torch.backends.cuda.matmul.fp32_precision = "ieee"
+torch.backends.cudnn.conv.fp32_precision = "ieee"
 ```
 
 Key points:
-- No memory savings (still stored as FP32).
-- Speeds up matmuls and convolutions, not element-wise ops.
-- Transparent — your code doesn't change.
-- Think of it as "free acceleration for FP32 code on Ampere/Hopper."
+- No parameter-storage savings: tensors remain FP32.
+- Can accelerate eligible FP32 matrix multiplication and convolution workloads on Ampere and later NVIDIA GPUs.
+- Uses FP32-like exponent range with reduced input significand precision.
+- Accumulation is performed with FP32 precision.
+- Whether TF32 is enabled should be treated as an explicit runtime/framework setting rather than assumed.
+
+Think of TF32 as a hardware-accelerated execution path for eligible FP32 workloads when its reduced input precision is acceptable.
 
 #### FP16 (Half Precision)
 
@@ -188,10 +221,10 @@ x = torch.tensor(1.0, dtype=torch.float16)
 FP16 is fast and memory-efficient, but the 5-bit exponent limits the dynamic range to ±65,504. In practice, this means:
 
 - **Overflow**: Loss values, logits, or activations exceeding 65,504 become `inf`.
-- **Underflow**: Gradients smaller than ~6×10^-8 become zero.
-- **Loss scaling is mandatory** — GradScaler scales the loss up before backward pass to keep gradients in a representable range, then scales them back down before the optimizer step.
+- **Underflow**: FP16's minimum positive **normal** value is approximately `6.10×10^-5`; subnormal values extend down to approximately `5.96×10^-8`. Very small gradients can therefore lose precision or eventually underflow to zero.
+- **Loss scaling is commonly used for FP16 training** and is often essential for numerical robustness. `GradScaler` scales the loss before backpropagation so small gradient values are less likely to underflow, then unscales them before the optimizer update.
 
-FP16 works well with GradScaler but requires more care than BF16. It's the legacy choice — use BF16 instead unless you have a specific reason.
+FP16 remains useful and well supported, particularly on hardware without BF16 acceleration. On hardware with strong BF16 support, BF16 is often the easier training default because its wider exponent range substantially reduces overflow and underflow problems.
 
 #### BF16 (Brain Floating Point)
 
@@ -211,10 +244,12 @@ BF16 vs FP16:
   FP16:  narrow range (5-bit exponent)         ← this causes problems
 ```
 
-Because BF16 has the same exponent as FP32, it can represent the same magnitudes. No overflow at 65,504. No gradient underflow. **GradScaler is optional** (though harmless to include). This makes BF16 the clear default choice for training on A100 and H100.
+Because BF16 uses the same 8-bit exponent width as FP32, it has approximately the same dynamic range. It therefore avoids FP16's 65,504 overflow limit and makes gradient underflow far less problematic than in FP16. BF16 still has finite range and limited precision, so overflow, underflow, and rounding remain possible.
+
+Loss scaling is generally unnecessary for BF16 training. On GPUs with efficient BF16 Tensor Core support — including NVIDIA A100 and H100 — BF16 mixed precision is an excellent default for many deep-learning workloads.
 
 ```python
-# BF16 is simple — no scaler needed (but you can use one)
+# BF16 generally does not require gradient scaling
 with torch.amp.autocast(device_type="cuda", dtype=torch.bfloat16):
     output = model(input)
     loss = criterion(output, target)
@@ -225,7 +260,14 @@ optimizer.step()
 
 #### FP8 (E4M3 and E5M2)
 
-FP8 comes in two flavors, each designed for a specific role in training:
+FP8 provides only eight bits per value and therefore requires scaling to keep tensors within a useful representable range. Two common formats are E4M3 and E5M2.
+
+NVIDIA Transformer Engine's traditional **HYBRID** FP8 recipe uses:
+
+- **E4M3** for the forward pass, where additional precision is useful.
+- **E5M2** for the backward pass, where additional dynamic range can be useful.
+
+This mapping is a training recipe rather than an intrinsic rule of the FP8 formats. Modern scaling strategies can also use E4M3 in both directions.
 
 ```
 E4M3:  4-bit exponent, 3-bit mantissa → range ±448
@@ -237,10 +279,12 @@ E5M2:  5-bit exponent, 2-bit mantissa → range ±57,344
        Less precision, more range (gradients vary more widely)
 ```
 
-FP8 is **H100-only** and requires NVIDIA's Transformer Engine library. It provides ~2× speedup over BF16 on transformer workloads but requires per-tensor scaling to manage the extremely narrow representable range.
+NVIDIA Transformer Engine supports FP8 on **Ada, Hopper, and Blackwell** GPUs. FP8 execution is architecture- and software-dependent; NVIDIA's Transformer Engine provides scaling recipes and optimized layers that make FP8 training practical.
+
+FP8 can substantially increase Tensor Core throughput relative to BF16 on supported hardware, although application-level speedup depends on model shape, scaling overhead, memory traffic, kernel coverage, and how much of the workload actually executes in FP8.
 
 ```python
-# FP8 via Transformer Engine (H100 only)
+# FP8 via NVIDIA Transformer Engine on supported Ada/Hopper/Blackwell GPUs
 import transformer_engine.pytorch as te
 
 # Replace standard PyTorch layers
@@ -250,6 +294,8 @@ with te.fp8_autocast(enabled=True):
     output = linear(input)
     # TE handles per-tensor scaling internally
 ```
+
+On Blackwell, newer block-scaled formats such as MXFP8 further change the precision/scaling tradeoff. FP8 should therefore be understood as a family of low-precision execution strategies, not simply as "E4M3 forward / E5M2 backward."
 
 FP8 is not a "set and forget" format. It works best for:
 - Transformer architectures (attention + feedforward layers).
@@ -261,8 +307,12 @@ FP8 is not a "set and forget" format. It works best for:
 Integer formats have no exponent — they represent a fixed, evenly-spaced set of values. A separate *scale factor* maps them back to the real number line:
 
 ```
-real_value = int_value × scale + zero_point
+quantized_value = round(real_value / scale) + zero_point
+
+real_value ≈ (quantized_value - zero_point) × scale
 ```
+
+The zero point is expressed in the **quantized integer domain**: it identifies the integer code corresponding to real-valued zero.
 
 ```python
 # INT8: 256 distinct values (-128 to 127)
@@ -289,67 +339,100 @@ real_value = int_value × scale + zero_point
 
 ### 4.2 Model Memory Calculator
 
-A model's GPU memory footprint during training has four components:
+A training workload usually consumes GPU memory in several major categories:
 
 ```
-Total Memory = Model Parameters
+Total Memory ≈ Parameters
              + Gradients
-             + Optimizer States
-             + Activations (for backprop)
+             + Optimizer State
+             + Saved Activations
+             + Temporary Buffers / Workspace
 ```
 
-Here's what each costs for a 1-billion parameter model:
+The exact dtype of each component depends on the training strategy.
 
-| Component | FP32 | BF16 Mixed Precision | Notes |
-|---|---|---|---|
-| **Parameters** | 4 GB | 2 GB (BF16) + 4 GB (FP32 master copy) = 6 GB* | Master weights stay FP32 |
-| **Gradients** | 4 GB | 2 GB (BF16) | |
-| **Adam optimizer** | 8 GB (momentum + variance) | 8 GB (always FP32) | 2 FP32 copies per param |
-| **Activations** | Varies | ~Half | Depends on batch size, model depth |
-| **Total (approx)** | **~16 GB + activations** | **~16 GB + activations** | |
+#### Standard PyTorch AMP / autocast
 
-*Wait — mixed precision uses more memory for parameters?* Yes, because you keep an FP32 master copy. Parameters go up by 2 GB while gradients drop by 2 GB, so the two cancel and the fixed cost lands in the same place as FP32. The real savings come from activations (halved), which is what lets you increase batch size without OOM.
+A common pattern is:
+
+```python
+model = model.cuda()  # parameters remain FP32
+
+with torch.autocast("cuda", dtype=torch.bfloat16):
+    output = model(input)
+    loss = criterion(output, target)
+
+loss.backward()
+optimizer.step()
+```
+
+Here, the model parameters remain FP32. `autocast` selects lower-precision execution for eligible operations; it does **not** normally maintain one persistent BF16 parameter tensor plus a second FP32 "master weight" tensor.
+
+For a 1-billion-parameter model using conventional FP32 parameters and Adam:
+
+| Component | Approximate fixed memory | Notes |
+|---|---|---|
+| Parameters | 4 GB | FP32 parameters |
+| Gradients | ~4 GB | Often match parameter storage in conventional AMP |
+| Adam first moment | 4 GB | Typically FP32 |
+| Adam second moment | 4 GB | Typically FP32 |
+| Activations | Varies | Autocast can significantly reduce this component |
+| Temporary buffers | Varies | Kernel/framework dependent |
+
+This gives roughly **16 GB plus activations and temporary memory** before considering distributed-training sharding or other optimizations.
+
+The major memory benefit of ordinary AMP often comes from reduced-precision intermediate activations and temporary tensors rather than automatically halving every persistent training tensor.
+
+#### Alternative low-precision parameter strategies
+
+Some frameworks and large-model training systems deliberately store parameters or optimizer state in reduced precision, maintain explicit FP32 master weights, shard state across GPUs, or quantize optimizer states. Those are separate implementation choices and can produce very different memory accounting.
 
 ### 4.3 Quick Estimation Script
 
 ```python
-def estimate_memory(num_params_billions, precision="bf16_mixed", optimizer="adam"):
-    """Estimate GPU memory for training (excludes activations)."""
+def estimate_memory(
+    num_params_billions,
+    param_bytes=4,
+    grad_bytes=4,
+    optimizer_state_bytes_per_param=8,
+):
+    """
+    Approximate persistent training-state memory.
+    Excludes activations, temporary buffers, fragmentation,
+    communication buffers, and framework-specific overhead.
+    """
     P = num_params_billions * 1e9
 
-    if precision == "fp32":
-        params_bytes = P * 4
-        grad_bytes = P * 4
-    elif precision == "bf16_mixed":
-        params_bytes = P * 2 + P * 4   # BF16 working + FP32 master
-        grad_bytes = P * 2
-    elif precision == "bf16_pure":
-        params_bytes = P * 2
-        grad_bytes = P * 2
+    params = P * param_bytes
+    grads = P * grad_bytes
+    optimizer = P * optimizer_state_bytes_per_param
 
-    if optimizer == "adam":
-        opt_bytes = P * 4 * 2   # momentum + variance, always FP32
-    elif optimizer == "sgd_momentum":
-        opt_bytes = P * 4       # just momentum
-    elif optimizer == "sgd":
-        opt_bytes = 0
+    total = params + grads + optimizer
+    GB = 1e9
 
-    total = params_bytes + grad_bytes + opt_bytes
-    GB = 1e9   # decimal GB throughout, so the parts sum to the total
+    print(f"{num_params_billions}B parameters")
+    print(f"  Parameters: {params / GB:.1f} GB")
+    print(f"  Gradients:  {grads / GB:.1f} GB")
+    print(f"  Optimizer:  {optimizer / GB:.1f} GB")
+    print(f"  Fixed total:{total / GB:.1f} GB")
+    print("  + activations, temporary buffers, and runtime overhead")
 
-    print(f"Model: {num_params_billions}B parameters, {precision}, {optimizer}")
-    print(f"  Parameters:  {params_bytes / GB:.1f} GB")
-    print(f"  Gradients:   {grad_bytes / GB:.1f} GB")
-    print(f"  Optimizer:   {opt_bytes / GB:.1f} GB")
-    print(f"  Total:       {total / GB:.1f} GB  (+ activations)")
-    print()
 
-# Examples
-estimate_memory(1.0, "fp32", "adam")         # 16.0 GB + activations
-estimate_memory(1.0, "bf16_mixed", "adam")   # 16.0 GB + activations (but smaller activations)
-estimate_memory(7.0, "bf16_mixed", "adam")   # 112.0 GB → needs multi-GPU
-estimate_memory(7.0, "bf16_mixed", "sgd")    # 56.0 GB → fits on 1× H100 80GB
+# Conventional FP32-parameter Adam / standard AMP-style accounting
+estimate_memory(
+    1.0,
+    param_bytes=4,
+    grad_bytes=4,
+    optimizer_state_bytes_per_param=8,
+)
 ```
+
+<Callout type="warning">
+  Do not infer total training memory solely from the compute dtype.
+  `autocast(dtype=torch.bfloat16)` describes how eligible operations execute; it
+  does not by itself specify how parameters, gradients, optimizer states,
+  checkpoints, or distributed shards are stored.
+</Callout>
 
 ### 4.4 Checkpoint & Storage Sizes
 
@@ -375,18 +458,23 @@ torch.save(model.state_dict(), "model_fp32.pt")
 
 ## 5. Speed & Throughput Impact
 
-### 5.1 Tensor Core Throughput (Theoretical Peak)
+### 5.1 Tensor Core Throughput — Representative Dense Peak
 
-The GPU's tensor cores are specialized hardware for matrix multiply-accumulate. Different precisions run at different speeds:
+The GPU's tensor cores are specialized hardware for matrix multiply-accumulate. Different precisions run at different speeds.
 
-| Precision | A100 (TFLOPS) | H100 (TFLOPS) | H100 Speedup vs A100 |
+Peak specifications depend on GPU SKU, clock/power configuration, datatype, accumulation mode, and whether NVIDIA's 2:4 structured sparsity is enabled. The table below uses representative **dense** peak values and should be treated as hardware capability, not expected application throughput.
+
+| Precision | A100 | H100 SXM | Notes |
 |---|---|---|---|
-| FP64 | 9.7 | 34 | 3.5× |
-| FP32 (non-TC) | 19.5 | 51 | 2.6× |
-| TF32 | 156 | 756 | 4.8× |
-| FP16 / BF16 | 312 | 1,513 | 4.8× |
-| FP8 | — | 3,026 | H100 only |
-| INT8 | 624 | 3,026 | 4.8× |
+| FP64 CUDA cores | 9.7 TFLOPS | 34 TFLOPS | Dense |
+| FP32 CUDA cores | 19.5 TFLOPS | 67 TFLOPS | Dense |
+| TF32 Tensor Core | 156 TFLOPS | ~495 TFLOPS | Dense |
+| BF16 Tensor Core | 312 TFLOPS | ~989 TFLOPS | Dense |
+| FP16 Tensor Core | 312 TFLOPS | ~989 TFLOPS | Dense |
+| FP8 Tensor Core | — | ~1,979 TFLOPS | Dense |
+| INT8 Tensor Core | 624 TOPS | ~1,979 TOPS | Dense |
+
+NVIDIA also publishes approximately 2× higher **effective** Tensor Core figures when supported 2:4 structured sparsity is used. Dense and sparsity-assisted numbers should not be mixed in the same comparison.
 
 ### 5.2 Real-World Speedups
 
@@ -514,8 +602,11 @@ small = torch.tensor(0.01, dtype=torch.bfloat16)
 result = big + small
 print(f"BF16: 1000.0 + 0.01 = {result.item()}")  # still 1000.0 — the 0.01 vanished
 
-# This is why optimizer states (which accumulate) must stay FP32
+# This is one reason conventional training commonly keeps
+# accumulation-sensitive optimizer state in FP32.
 ```
+
+FP32 optimizer state is common, particularly for Adam/AdamW, but it is not a universal requirement. Reduced-precision and quantized optimizer implementations also exist.
 
 ---
 
@@ -523,90 +614,91 @@ print(f"BF16: 1000.0 + 0.01 = {result.item()}")  # still 1000.0 — the 0.01 van
 
 ### 7.1 The Architecture
 
-Mixed precision isn't "just use BF16 everywhere." It's a carefully designed system:
+Mixed precision is primarily about choosing an appropriate execution precision for each operation while retaining higher precision where numerical stability requires it.
+
+A conventional PyTorch BF16 autocast workflow looks conceptually like this:
 
 ```
-                    ┌───────────────────────────────┐
-                    │     FP32 MASTER WEIGHTS        │
-                    │   (optimizer updates these)    │
-                    └──────────────┬────────────────┘
-                                   │
-                            cast to BF16
-                                   │
-                                   ▼
-    ┌──────────┐           ┌──────────────┐           ┌──────────┐
-    │  Input   │──BF16───▶│  FORWARD     │──BF16───▶│  Output  │
-    │  (BF16)  │           │  PASS (BF16) │           │  (BF16)  │
-    └──────────┘           └──────┬───────┘           └──────────┘
-                                  │
-                           Loss in FP32
+                     ┌──────────────────────────┐
+                     │     MODEL PARAMETERS     │
+                     │        typically FP32    │
+                     └────────────┬─────────────┘
                                   │
                                   ▼
-                           ┌──────────────┐
-                           │  BACKWARD    │
-                           │  PASS (BF16) │
-                           └──────┬───────┘
-                                  │
-                           gradients (BF16)
-                                  │
-                           cast to FP32
+                     ┌──────────────────────────┐
+Input ──────────────▶│   AUTOCAST REGION        │──────────────▶ Output
+                     │                          │
+                     │ Eligible GEMMs / convs   │
+                     │      → BF16              │
+                     │                          │
+                     │ Sensitive operations     │
+                     │      → FP32 as needed    │
+                     └────────────┬─────────────┘
                                   │
                                   ▼
-                    ┌───────────────────────────────┐
-                    │     OPTIMIZER STEP (FP32)      │
-                    │  Adam momentum/variance: FP32  │
-                    │  weight += lr × update : FP32  │
-                    └───────────────────────────────┘
+                           BACKPROPAGATION
+                                  │
+                                  ▼
+                     ┌──────────────────────────┐
+                     │     OPTIMIZER STEP       │
+                     │ conventional optimizer   │
+                     │ state often FP32         │
+                     └──────────────────────────┘
 ```
+
+<Callout type="info">
+  `autocast` is an operation-dispatch mechanism. It does not simply convert the
+  entire model to BF16, nor does it imply that a second FP32 master copy of
+  every parameter exists.
+
+  Explicit low-precision parameter storage plus FP32 master weights is another
+  valid mixed-precision architecture, but it should be distinguished from
+  standard PyTorch autocast.
+</Callout>
 
 ### 7.2 What autocast Does and Doesn't Do
 
 `torch.amp.autocast` selectively casts operations to lower precision. Not all operations are cast — PyTorch maintains an internal list:
 
 ```python
-# Operations that autocast runs in BF16/FP16 (fast):
-#   - torch.mm, torch.matmul, torch.bmm (matrix multiplications)
-#   - torch.nn.Linear (forward)
-#   - torch.nn.Conv1d/2d/3d (forward)
-#   - torch.nn.functional.linear, conv1d, conv2d, conv3d
-
-# Operations that autocast keeps in FP32 (for stability):
-#   - torch.nn.functional.softmax
-#   - torch.nn.functional.cross_entropy
-#   - torch.nn.functional.log_softmax
-#   - torch.nn.LayerNorm, BatchNorm, GroupNorm
-#   - torch.nn.functional.normalize
-#   - torch.pow, torch.sum (reductions)
-#   - torch.nn.functional.binary_cross_entropy
-#   - torch.nn.functional.cosine_similarity
-
-# Operations that run in the input's type (no change):
-#   - Element-wise ops: relu, gelu, dropout, etc.
-#   - Concatenation, slicing, reshaping
+# Examples of CUDA operations eligible for lower-precision autocast:
+#   matmul, mm, bmm
+#   linear
+#   conv1d / conv2d / conv3d
+#
+# Examples that PyTorch's CUDA autocast policy can execute in FP32
+# for numerical stability:
+#   softmax / log_softmax
+#   cross_entropy
+#   layer_norm / group_norm
+#   normalize
+#   sum
+#   binary_cross_entropy_with_logits
+#
+# Unlisted operations generally run according to their input dtype.
+# Exact autocast policy is framework/version dependent.
 ```
 
-You don't configure this — autocast handles it. But understanding what it does helps you debug:
+PyTorch specifically recommends `binary_cross_entropy_with_logits` rather than `binary_cross_entropy` inside autocast-sensitive training code.
 
 ```python
 with torch.amp.autocast(device_type="cuda", dtype=torch.bfloat16):
-    # Linear layer: weights and activations cast to BF16, matmul in BF16
-    hidden = model.linear(x)           # BF16
+    hidden = model.linear(x)
+    hidden = model.layernorm(hidden)
+    attn = torch.softmax(scores, dim=-1)
+    loss = criterion(logits, targets)
 
-    # LayerNorm: autocast forces FP32 internally
-    hidden = model.layernorm(hidden)   # FP32 computation, BF16 output
-
-    # Softmax: forced to FP32
-    attn = torch.softmax(scores, dim=-1)  # FP32
-
-    # CrossEntropy loss: forced to FP32
-    loss = criterion(logits, targets)  # FP32
+# Do not assume every intermediate tensor's visible dtype tells you
+# the internal arithmetic precision of every kernel.
 ```
 
 ### 7.3 GradScaler — When and Why
 
-**GradScaler is needed for FP16, optional for BF16.**
+`GradScaler` is primarily associated with FP16 mixed-precision training. FP16's narrow exponent range makes small gradients particularly vulnerable to underflow. Loss scaling shifts gradient magnitudes into a more useful representable range during backpropagation.
 
-The problem with FP16: gradients can be smaller than 6×10^-8 (FP16's minimum positive value) and become zero. GradScaler fixes this:
+BF16 has a much wider exponent range, so gradient scaling is generally unnecessary for BF16 training.
+
+GradScaler is commonly used — and often practically necessary — for robust FP16 training. It is generally unnecessary for BF16:
 
 ```python
 scaler = torch.amp.GradScaler()
@@ -625,11 +717,11 @@ scaler.step(optimizer)
 scaler.update()
 ```
 
-With BF16, gradients almost never underflow (same range as FP32), so GradScaler is technically unnecessary. Including it doesn't hurt and makes your code work with both FP16 and BF16.
+With BF16, gradient underflow is far less problematic because BF16 shares FP32's exponent width, so gradient scaling is generally unnecessary.
 
-### 7.4 The Master Weights Pattern
+### 7.4 FP32 Master Weights — An Alternative Pattern
 
-Why keep FP32 master weights? Because the optimizer update can be too small for BF16:
+Some mixed-precision implementations store working parameters in a low-precision format while maintaining a separate FP32 master copy for optimizer updates. The motivation is straightforward: an update may be too small to change a BF16 or FP16 parameter directly.
 
 ```python
 # Suppose:
@@ -648,7 +740,7 @@ update = lr * gradient = 0.00005
 # Cast to BF16 for the next forward pass.
 ```
 
-The optimizer (Adam, SGD) always operates on FP32 copies. After the update, the FP32 weights are cast to BF16 for the next forward pass.
+In an explicit master-weight implementation, the optimizer updates FP32 master parameters and new low-precision working weights are produced from them. **Standard PyTorch autocast does not require this architecture:** parameters can remain FP32 while eligible operations execute internally at BF16 or FP16 precision.
 
 ---
 
@@ -661,14 +753,16 @@ Are you TRAINING or running INFERENCE?
 │
 ├─ TRAINING
 │   │
-│   ├─ Do you have A100 or H100?
+│   ├─ Does your accelerator provide efficient BF16 support?
 │   │   │
-│   │   ├─ Yes → Use BF16 mixed precision (Section 7)
-│   │   │         TF32 is already on by default.
-│   │   │         FP8 on H100 if you need more speed (transformer models only).
+│   │   ├─ Yes → BF16 autocast is a strong default for training.
+│   │   │         Configure TF32 explicitly if using FP32 matmuls/convs
+│   │   │         and its precision is acceptable.
+│   │   │         Consider FP8 on supported hardware when additional
+│   │   │         throughput justifies the scaling/validation complexity.
 │   │   │
-│   │   └─ No (older GPU: V100, T4, etc.)
-│   │       └─ Use FP16 mixed precision with GradScaler
+│   │   └─ No → FP16 mixed precision with GradScaler is often the
+│   │            appropriate Tensor Core training path.
 │   │
 │   └─ Special cases:
 │       ├─ Numerical debugging → Pure FP32 (disable TF32 too)
@@ -682,24 +776,27 @@ Are you TRAINING or running INFERENCE?
     │   └─ No  → BF16 (simple, accurate)
     │
     └─ Memory-constrained (large model, small GPU)?
-        ├─ Moderate → INT8 (2× memory savings, ~1% quality loss)
-        └─ Severe  → INT4 or GPTQ/AWQ (4× savings, ~3-5% quality loss)
+        ├─ Moderate → INT8: approximately 2× raw weight-storage
+        │              reduction vs FP16/BF16
+        └─ Severe   → INT4 / GPTQ / AWQ: approximately 4× raw
+                       weight-storage reduction
+
+    Always measure model/task quality after quantization.
 ```
 
 ### 8.2 Summary Table
 
-| Use Case | Format | PyTorch dtype | Notes |
-|---|---|---|---|
-| Default training (A100/H100) | BF16 mixed | `torch.bfloat16` | Best tradeoff |
-| Training on V100/T4 | FP16 mixed | `torch.float16` | Needs GradScaler |
-| Optimizer states | FP32 | `torch.float32` | Always |
-| Master weights | FP32 | `torch.float32` | Always |
-| Debugging training | FP32 | `torch.float32` | Disable TF32 too |
-| Max throughput training (H100) | FP8 | Via Transformer Engine | Transformers only |
-| Inference (quality-first) | BF16 | `torch.bfloat16` | Simple deployment |
-| Inference (speed-first) | INT8 | Via quantization | ~1% quality loss |
-| Inference (memory-first) | INT4 | Via quantization | ~3-5% quality loss |
-| Checkpoint storage | BF16 | `torch.bfloat16` | Half the disk space |
+| Use Case | Typical Format | Notes |
+|---|---|---|
+| Default training on strong BF16 hardware | BF16 autocast | Excellent range/performance tradeoff |
+| Training on FP16-oriented hardware | FP16 autocast | Usually pair with GradScaler |
+| Conventional Adam/AdamW state | FP32 commonly used | Not a universal requirement |
+| Standard PyTorch AMP parameters | Often FP32 | Autocast changes execution precision, not necessarily parameter storage |
+| Numerical debugging | FP32 / FP64 as appropriate | Disable reduced-precision execution when isolating numerical issues |
+| Maximum-throughput Transformer training | FP8 on supported hardware | Requires appropriate scaling and validation |
+| Quality-first inference | BF16 / FP16 / FP32 | Hardware and model dependent |
+| Quantized inference | INT8 / INT4 / FP8 | Validate latency, memory, and task quality |
+| Compact checkpoint storage | BF16/FP16 or quantized | Depends on intended reuse |
 
 ---
 
@@ -733,34 +830,37 @@ print(x.dtype)              # torch.bfloat16
 ```python
 from torch.amp import autocast, GradScaler
 
-# --- Pattern 1: BF16 on A100/H100 (recommended) ---
+# BF16
 with autocast(device_type="cuda", dtype=torch.bfloat16):
     output = model(input)
     loss = criterion(output, target)
+
 loss.backward()
 optimizer.step()
 
 
-# --- Pattern 2: FP16 with GradScaler (older GPUs or specific needs) ---
-scaler = GradScaler()
+# FP16
+scaler = GradScaler("cuda")
+
 with autocast(device_type="cuda", dtype=torch.float16):
     output = model(input)
     loss = criterion(output, target)
+
 scaler.scale(loss).backward()
 scaler.step(optimizer)
 scaler.update()
 
 
-# --- Pattern 3: Selective autocast (exclude specific ops) ---
+# Selective autocast — force FP32 for a numerically sensitive layer
 with autocast(device_type="cuda", dtype=torch.bfloat16):
-    features = model.backbone(images)                     # BF16
+    features = model.backbone(images)
     with autocast(device_type="cuda", enabled=False):
-        # Force FP32 for a numerically sensitive custom layer
         features_fp32 = features.float()
-        output = my_sensitive_layer(features_fp32)        # FP32
-    output = output.bfloat16()
-    loss = criterion(output, target)                      # FP32 (autocast rule)
+        output = my_sensitive_layer(features_fp32)
+    loss = criterion(output, target)
 ```
+
+BF16 autocast does not create BF16 model parameters; it selects execution precision for eligible operations.
 
 ### 9.3 Checking What autocast Is Doing
 
@@ -802,8 +902,11 @@ for name, param in model.named_parameters():
 Training is done. Your model works. Now you want to deploy it as fast and cheaply as possible. Quantization compresses the model by representing weights (and optionally activations) in lower-bit integers.
 
 ```
-Training:    BF16/FP32 → best quality, high memory, slower
-Inference:   INT8/INT4 → slightly lower quality, much less memory, much faster
+Higher precision → simpler numerical behavior, larger raw representation
+Lower precision  → lower storage/bandwidth cost, potentially higher throughput
+
+Actual accuracy and speed depend on the model, quantization scheme,
+kernel implementation, hardware, calibration, and workload.
 ```
 
 ### 10.2 Post-Training Quantization (PTQ) with PyTorch
@@ -869,7 +972,8 @@ with torch.no_grad():
     # Max absolute difference
     print(f"Max diff: {(out_fp32 - out_int8).abs().max().item():.6f}")
 
-    # Cosine similarity (should be > 0.99)
+    # Cosine similarity is a useful diagnostic, but no universal
+    # threshold guarantees preserved model quality.
     cos_sim = torch.nn.functional.cosine_similarity(
         out_fp32.flatten().unsqueeze(0),
         out_int8.flatten().unsqueeze(0)
@@ -879,6 +983,8 @@ with torch.no_grad():
 # 2. Run your evaluation benchmark
 #    Compare accuracy/perplexity before and after quantization.
 ```
+
+Quantization quality must ultimately be assessed on the task metric that matters: accuracy, F1, perplexity, retrieval quality, generation quality, or another application-specific measure.
 
 ---
 
@@ -1105,8 +1211,8 @@ for precision in ["fp32", "bf16", "fp16"]:
 | `NaN` in loss | FP16 overflow in logits/loss | Switch to BF16 or increase GradScaler `init_scale` |
 | Loss stops decreasing | Small gradients underflow in FP16 | Switch to BF16 (wider range) |
 | Accuracy is noticeably worse in mixed precision | Sensitive layers cast to low precision | Wrap those layers with `autocast(enabled=False)` |
-| `inf` values in activations | Values exceed FP16 max (65504) | Switch to BF16, or add gradient clipping |
-| Training is slower with AMP than FP32 | Batch size too small for tensor cores | Increase batch size (tensor cores need multiples of 8) |
+| `inf` values in activations | Activation/logit overflow or unstable computation | Inspect the producing operation; BF16 may help if FP16 range is the issue. Gradient clipping addresses gradient magnitude and is not a general fix for forward-pass activation overflow |
+| Training is slower with AMP than FP32 | Small operations, conversion overhead, poor Tensor Core utilization, CPU/input bottlenecks, unsupported shapes, or a memory-bound workload | Profile the workload and inspect kernel utilization before changing model dimensions |
 | GradScaler scale drops to near-zero | Too many inf/nan gradients | Reduce learning rate, check data for corruption |
 | `RuntimeError: expected scalar type BFloat16 but found Float` | Dtype mismatch between tensors | Ensure inputs match model dtype; use `autocast` |
 
@@ -1115,8 +1221,14 @@ for precision in ["fp32", "bf16", "fp16"]:
 ```python
 # Step 1: Run in pure FP32 first. Does the problem go away?
 # If yes → it's a precision issue. If no → it's a different bug.
-torch.backends.cuda.matmul.allow_tf32 = False
-torch.backends.cudnn.allow_tf32 = False
+
+# For strict FP32 numerical debugging on current PyTorch:
+torch.backends.cuda.matmul.fp32_precision = "ieee"
+torch.backends.cudnn.conv.fp32_precision = "ieee"
+
+# Older PyTorch releases use:
+# torch.backends.cuda.matmul.allow_tf32 = False
+# torch.backends.cudnn.allow_tf32 = False
 
 # Step 2: Check for NaN/Inf
 def check_tensors(model, step):
@@ -1143,16 +1255,16 @@ for module in model.modules():
 
 ### 12.3 Tensor Core Alignment
 
-For maximum performance, keep tensor dimensions as multiples of 8 (for BF16/FP16) or 16 (for FP8/INT8):
+Tensor Core-friendly alignment is a useful optimization: dimensions that are multiples of 8 (BF16/FP16) or 16 (FP8/INT8) often map more efficiently onto Tensor Core kernels. This is a performance heuristic rather than a universal requirement — profile before reshaping a model around it.
 
 ```python
-# SLOW: hidden_size=257 (not a multiple of 8)
+# Often slower: dimensions that don't align to Tensor Core tiles
 model = nn.Linear(257, 513)
 
-# FAST: hidden_size=256 (multiple of 8)
+# Often faster: aligned dimensions
 model = nn.Linear(256, 512)
 
-# This applies to: batch size, sequence length, hidden dimensions,
+# Commonly relevant for: batch size, sequence length, hidden dimensions,
 # number of attention heads, vocabulary size
 ```
 
@@ -1175,12 +1287,15 @@ FP32 (Single)
 └───┴────────────────┴──────────────────────────────────────┘
 Range: ±3.4 × 10^38           Precision: ~7 decimal digits
 
-TF32 (TensorFloat-32) — stored as 32 bits, computed as 19
+TF32 (TensorFloat-32) — FP32 storage; reduced-precision Tensor Core input
 ┌───┬────────────────┬────────────────┐
-│ S │  Exponent (8)  │  Mantissa (10) │ . . . (13 bits ignored in tensor core)
+│ S │  Exponent (8)  │  Fraction (10) │ . . . (remaining FP32 fraction precision discarded/rounded)
 │ 1 │ 2 3 4 5 6 7 8  │ 9 10 ... 18   │
 └───┴────────────────┴────────────────┘
-Range: ±3.4 × 10^38           Precision: ~3 decimal digits
+Range: ±3.4 × 10^38           Precision: ~3 decimal digits input
+Tensor remains FP32 in memory.
+Eligible Tensor Core operations use TF32-like input precision
+and typically accumulate products in FP32.
 
 BF16 (Brain Float)
 ┌───┬────────────────┬──────────┐
@@ -1223,5 +1338,18 @@ INT4
 
 ---
 
+<Callout type="info">
+  **Terminology note:** "mantissa" is common informal ML terminology. In IEEE
+  floating-point terminology, the stored field is more precisely called the
+  **fraction**. For normal numbers, the significand includes an implicit
+  leading 1 in addition to these stored fraction bits.
+</Callout>
+
+---
+
 **Companion to:** HPC ML Pipeline Manual (v1)
-**Last updated:** July 2026
+**Last updated:** August 2026
+
+**Technical reference baseline:** PyTorch 2.x CUDA semantics and AMP
+documentation; NVIDIA Ampere/Hopper specifications; NVIDIA Transformer Engine
+FP8 documentation.
