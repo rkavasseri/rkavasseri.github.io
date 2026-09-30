@@ -38,12 +38,12 @@ const timeline = [
 ];
 
 const researchInterests = [
-  "Systems theory and nonlinear dynamics",
-  "Networks and complex interconnected systems",
-  "Signal processing",
-  "Machine learning and applied AI",
-  "Production ML systems and deployment",
-  "Full-stack engineering for research software",
+  "Foundational models and model architecture",
+  "AI for science and physics-informed learning",
+  "Retrieval, agents, and research intelligence",
+  "Production AI systems and deployment",
+  "Research computing and institutional AI adoption",
+  "Systems theory, controls, and scientific computing",
 ];
 
 const skills = [
@@ -71,7 +71,7 @@ export default function AboutPage() {
       <header>
         <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">About</h1>
         <p className="mt-3 text-base font-medium text-primary">
-          {siteConfig.title}
+          Associate Dean / Professor
         </p>
         <p className="mt-1 text-sm leading-6 text-muted-foreground">
           {siteConfig.department}
@@ -86,27 +86,29 @@ export default function AboutPage() {
         <h2 className="text-xl font-semibold tracking-tight">Biography</h2>
         <div className="mt-4 space-y-5 leading-7 text-muted-foreground">
           <p>
-            I am {siteConfig.title} in the{" "}
+            I am Associate Dean and Professor in the{" "}
             {siteConfig.department} at {siteConfig.institution}, where my work
-            sits at the intersection of systems theory, networks, signal
-            processing, and machine learning. These areas share a common spine —
-            understanding how structure and dynamics interact in complex systems
-            — and the interesting problems tend to live where they overlap.
+            now spans foundational model architecture, AI for scientific
+            discovery, retrieval and agentic systems, and production AI. I work
+            across the full stack: from the structure of a model and the evidence
+            behind an experiment to the software and infrastructure required for
+            deployment.
           </p>
           <p>
-            What I care about beyond the analysis is what happens when it leaves
-            the notebook. I like deploying things: standing up the
-            infrastructure, wiring the data path end to end, and finding out
-            which assumptions survive contact with production. A model that runs
-            once on a workstation and a model that serves real traffic are
-            different engineering objects, and the gap between them is where
-            most of the practical difficulty lives.
+            Systems theory, controls, signal processing, and scientific
+            computing remain the intellectual foundation of that work. They
+            provide a durable way to reason about structure, dynamics,
+            uncertainty, and constraint—whether the system is a physical process,
+            a coordinated set of language models, or an institutional research
+            workflow.
           </p>
           <p>
-            That taste for the full-stack build is why this site exists. I write
-            technical guides because the infrastructure knowledge real systems
-            depend on is rarely written down in a form that is useful to the
-            next person who needs it.
+            I care about what happens after analysis leaves the notebook: how
+            data moves, how models are evaluated, how people use the resulting
+            system, and which assumptions survive production. In academic
+            leadership, the same perspective shapes my work on research
+            computing and responsible institutional AI adoption. This site
+            documents both the research and the engineering needed to sustain it.
           </p>
         </div>
       </section>

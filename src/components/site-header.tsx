@@ -52,7 +52,7 @@ export function SiteHeader() {
           className="flex items-center gap-3 hover:underline hover:underline-offset-4"
         >
           <span className="grid h-10 w-10 place-items-center bg-foreground font-mono text-xs font-bold text-background">RK</span>
-          <span className="max-w-[170px] text-[11px] font-semibold uppercase leading-[1.2] tracking-wide">Rajesh Kavasseri<br/><span className="text-muted-foreground">Professor / Engineer</span></span>
+          <span className="max-w-[170px] text-[11px] font-semibold uppercase leading-[1.2] tracking-wide">Rajesh Kavasseri<br/><span className="text-muted-foreground">Full-Stack Academic AI</span></span>
         </Link>
 
         <nav className="hidden items-center gap-4 md:flex" aria-label="Main">

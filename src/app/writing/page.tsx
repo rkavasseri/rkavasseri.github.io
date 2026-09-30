@@ -19,6 +19,7 @@ import {
   socialLinks,
 } from "@/lib/constants";
 import { getAllGuides } from "@/lib/mdx";
+import { projects } from "@/lib/projects";
 
 export const metadata: Metadata = {
   title: "Writing",
@@ -35,9 +36,9 @@ export default function WritingPage() {
           Writing
         </h1>
         <p className="mt-4 text-lg leading-8 text-muted-foreground">
-          I write two newsletters on machine learning, systems architecture,
-          and what it takes to get research software into production. Both are
-          free.
+          Research notes, technical guides, and two newsletters on model
+          architecture, scientific AI, production systems, and the infrastructure
+          that connects them.
         </p>
       </header>
 
@@ -116,17 +117,27 @@ export default function WritingPage() {
         </div>
       </section>
 
-      <section className="mt-14">
+      <section className="mt-14" aria-labelledby="research">
         <h2
-          id="notes"
+          id="research"
           className="scroll-mt-24 text-xl font-semibold tracking-tight"
         >
-          Tech Notes
+          Current Research
         </h2>
-        <p className="mt-3 leading-7 text-muted-foreground">
-          Shorter working notes — benchmarks, retrieval experiments, and
-          findings that aren&apos;t long enough for a full guide. Coming soon.
-        </p>
+        <div className="mt-5 divide-y divide-border border-y border-border">
+          {projects.slice(0, 3).map((project) => (
+            <article key={project.title} className="grid gap-2 py-5 sm:grid-cols-[10rem_1fr] sm:gap-6">
+              <p className="font-mono text-[10px] uppercase tracking-[.16em] text-muted-foreground">{project.category}</p>
+              <div>
+                <h3 className="font-semibold">{project.title}</h3>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">{project.description}</p>
+              </div>
+            </article>
+          ))}
+        </div>
+        <Link href="/projects" className="mt-5 inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline">
+          View the full project index <ArrowRight className="h-4 w-4" aria-hidden />
+        </Link>
       </section>
 
       <section className="mt-14">

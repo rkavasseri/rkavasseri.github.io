@@ -4,7 +4,12 @@ import { ArrowDown, ArrowRight, ArrowUpRight } from "lucide-react";
 
 import { siteConfig, socialLinks } from "@/lib/constants";
 
-const disciplines = ["Systems", "Networks", "Signals", "Machine learning"];
+const disciplines = [
+  "Foundational AI",
+  "AI for Science",
+  "Production AI",
+  "Research Infrastructure",
+];
 
 export function HeroSection() {
   return (
@@ -13,22 +18,22 @@ export function HeroSection() {
       <div className="relative mx-auto grid min-h-[calc(100vh-5rem)] max-w-[1440px] px-5 lg:grid-cols-12 lg:px-10">
         <div className="flex flex-col justify-between border-x border-foreground bg-background/95 px-5 py-8 sm:px-10 lg:col-span-9 lg:py-12">
           <div className="flex items-center justify-between gap-4 font-mono text-[10px] uppercase tracking-[.2em]">
-            <span className="flex items-center gap-3"><i className="h-2 w-2 bg-foreground" /> Professor · Engineer · Builder</span>
+            <span className="flex items-center gap-3"><i className="h-2 w-2 bg-foreground" /> Researcher · Engineer · Academic leader</span>
             <span className="hidden sm:block">Brookings / South Dakota</span>
           </div>
 
           <div className="py-16 lg:py-20">
             <p className="mb-6 font-mono text-[10px] font-medium uppercase tracking-[.22em] sm:text-xs">
-              Systems theory / Networks / Signal processing / ML
+              Full-Stack Academic AI
             </p>
             <h1 className="max-w-5xl text-[clamp(3.75rem,9.2vw,8.75rem)] font-semibold leading-[.84] tracking-[-.065em]">
               Rajesh<br />Kavasseri<span aria-hidden>.</span>
             </h1>
             <p className="mt-9 max-w-3xl text-xl leading-8 md:text-2xl">
-              I study intelligent systems—and carry the work past the paper into software that has to survive the real world.
+              My work spans model architecture, scientific AI, production systems, and institutional deployment—carrying ideas from first principles into tools that work in the real world.
             </p>
             <div className="mt-9 flex flex-wrap gap-3">
-              <Link href="/guides" className="tech-button bg-foreground text-background">
+              <Link href="/projects" className="tech-button bg-foreground text-background">
                 Explore the work <ArrowRight size={17} />
               </Link>
               <Link href="/about" className="tech-button border border-foreground bg-background">

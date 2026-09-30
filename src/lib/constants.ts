@@ -5,15 +5,16 @@
 
 export const siteConfig = {
   name: "R. Kavasseri",
-  title: "Associate Dean/Professor",
+  title: "AI Researcher, Engineer, and Academic Leader",
   institution: "South Dakota State University",
   college: "Lohr College of Engineering",
   department: "Department of Electrical Engineering and Computer Science",
   office: "Crothers Hall, Room 201E",
   url: "https://rkavasseri.github.io",
   description:
-    "Associate Dean and Professor working at the intersection of systems theory, networks, signal processing, and machine learning — and shipping the results as production software.",
-  tagline: "Systems Theory · Networks · Signal Processing · Machine Learning",
+    "Rajesh Kavasseri is an AI researcher, engineer, and academic leader working across the full AI stack: foundational models, AI for science, production systems, and research infrastructure.",
+  tagline:
+    "Foundational AI · AI for Science · Production Systems · Research Infrastructure",
   ogImage: "/images/og-image.png",
   email: "rajesh.kavasseri@sdstate.edu",
 } as const;
@@ -34,7 +35,7 @@ export const navLinks: NavLink[] = [
     href: "/writing",
     items: [
       { title: "Guides", href: "/guides" },
-      { title: "Tech Notes", href: "/writing#notes" },
+      { title: "Current Research", href: "/writing#research" },
       { title: "Newsletters", href: "/writing#newsletters" },
       {
         title: "Publications",
