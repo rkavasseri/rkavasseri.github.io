@@ -41,7 +41,7 @@ export default function ProjectsPage() {
         </div>
         <div className="mt-14 border-b border-border">
           {projects.map((project, index) => (
-            <ProjectCard key={project.title} project={project} index={index} />
+            <ProjectCard key={project.title} project={project} index={index} showDetails />
           ))}
         </div>
       </section>

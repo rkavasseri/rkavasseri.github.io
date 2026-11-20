@@ -5,7 +5,7 @@ import { FileDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { cvPath, hasCv, siteConfig } from "@/lib/constants";
+import { cvPath, hasCv, siteConfig, socialLinks } from "@/lib/constants";
 
 export const metadata: Metadata = {
   title: "About",
@@ -27,7 +27,7 @@ const timeline = [
   {
     period: "1995 – 1996",
     title: "Research Engineer",
-    institution: "GE, Bangalore, India",
+    institution: "GEC Alsthom, Bangalore, India",
   },
   {
     period: "1991 – 1995",
@@ -71,7 +71,7 @@ export default function AboutPage() {
       <header>
         <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">About</h1>
         <p className="mt-3 text-base font-medium text-primary">
-          Associate Dean / Professor
+          Associate Dean for Research / Professor / Co-Executive Director
         </p>
         <p className="mt-1 text-sm leading-6 text-muted-foreground">
           {siteConfig.department}
@@ -86,8 +86,13 @@ export default function AboutPage() {
         <h2 className="text-xl font-semibold tracking-tight">Biography</h2>
         <div className="mt-4 space-y-5 leading-7 text-muted-foreground">
           <p>
-            I am Associate Dean and Professor in the{" "}
-            {siteConfig.department} at {siteConfig.institution}, where my work
+            I am Associate Dean for Research and Professor of Electrical Engineering at{" "}
+            {siteConfig.institution}, and Co-Executive Director of the{" "}
+            <a href="https://www.sdstate.edu/center-ai-innovation-emergent-technologies" className="text-primary underline underline-offset-4">
+              Center for AI Innovation and Emergent Technologies
+            </a>. Through the center, I lead the SDSU Science Commons pilot,
+            proposing shared architecture for agentic scientific workflows.
+            My work
             now spans foundational model architecture, AI for scientific
             discovery, retrieval and agentic systems, and production AI. I work
             across the full stack: from the structure of a model and the evidence
@@ -112,6 +117,11 @@ export default function AboutPage() {
           </p>
         </div>
       </section>
+
+      <p className="mt-6 flex flex-wrap gap-5">
+        <a href={socialLinks.scholar} className="text-primary underline underline-offset-4">Publications on Google Scholar</a>
+        <Link href="/projects" className="text-primary underline underline-offset-4">Research projects</Link>
+      </p>
 
       <Separator className="my-10" />
 

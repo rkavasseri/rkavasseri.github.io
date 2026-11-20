@@ -19,7 +19,7 @@ import {
   socialLinks,
 } from "@/lib/constants";
 import { getAllGuides } from "@/lib/mdx";
-import { projects } from "@/lib/projects";
+import { researchProjects } from "@/lib/projects";
 
 export const metadata: Metadata = {
   title: "Writing",
@@ -125,7 +125,7 @@ export default function WritingPage() {
           Current Research
         </h2>
         <div className="mt-5 divide-y divide-border border-y border-border">
-          {projects.slice(0, 3).map((project) => (
+          {researchProjects.map((project) => (
             <article key={project.title} className="grid gap-2 py-5 sm:grid-cols-[10rem_1fr] sm:gap-6">
               <p className="font-mono text-[10px] uppercase tracking-[.16em] text-muted-foreground">{project.category}</p>
               <div>

@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowDown, ArrowRight, ArrowUpRight } from "lucide-react";
 
-import { siteConfig, socialLinks } from "@/lib/constants";
+import { cvPath, hasCv, siteConfig, socialLinks } from "@/lib/constants";
 
 const disciplines = [
   "Foundational AI",
@@ -30,15 +30,21 @@ export function HeroSection() {
               Rajesh<br />Kavasseri<span aria-hidden>.</span>
             </h1>
             <p className="mt-9 max-w-3xl text-xl leading-8 md:text-2xl">
-              My work spans model architecture, scientific AI, production systems, and institutional deployment—carrying ideas from first principles into tools that work in the real world.
+              I build AI systems for researchers and teach people how to use and evaluate them. At South Dakota State University, I’m a professor of electrical engineering, Associate Dean for Research, and Co-Executive Director of the Center for AI Innovation and Emergent Technologies. I helped launch SDSU’s AI Engineering program and lead the Science Commons pilot through the center.
             </p>
             <div className="mt-9 flex flex-wrap gap-3">
               <Link href="/projects" className="tech-button bg-foreground text-background">
                 Explore the work <ArrowRight size={17} />
               </Link>
-              <Link href="/about" className="tech-button border border-foreground bg-background">
-                About me
-              </Link>
+              {hasCv ? (
+                <a href={cvPath} download className="tech-button border border-foreground bg-background">
+                  Download CV <ArrowDown size={17} />
+                </a>
+              ) : (
+                <Link href="/about" className="tech-button border border-foreground bg-background">
+                  About me
+                </Link>
+              )}
             </div>
           </div>
 
