@@ -36,7 +36,7 @@ export function generateStaticParams() {
 
 export function generateMetadata({ params }: GuidePageProps): Metadata {
   const guide = getGuideBySlug(params.slug);
-  if (!guide) return {};
+  if (!guide || guide.draft) return {};
 
   return {
     title: guide.title,

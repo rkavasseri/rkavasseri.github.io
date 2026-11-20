@@ -82,12 +82,17 @@ function parseFrontmatter(data: Record<string, unknown>): GuideFrontmatter {
   };
 }
 
+/** Only published, nonempty guides receive static routes. */
 export function getGuideSlugs(): string[] {
   if (!fs.existsSync(GUIDES_DIR)) return [];
   return fs
     .readdirSync(GUIDES_DIR)
     .filter((file) => file.endsWith(".mdx"))
-    .map((file) => file.replace(/\.mdx$/, ""));
+    .map((file) => file.replace(/\.mdx$/, ""))
+    .filter((slug) => {
+      const guide = getGuideBySlug(slug);
+      return guide !== null && !guide.draft;
+    });
 }
 
 export function getGuideBySlug(slug: string): Guide | null {
@@ -97,8 +102,11 @@ export function getGuideBySlug(slug: string): Guide | null {
   const raw = fs.readFileSync(filePath, "utf8");
   const { data, content } = matter(raw);
 
+  const frontmatter = parseFrontmatter(data);
+
   return {
-    ...parseFrontmatter(data),
+    ...frontmatter,
+    draft: frontmatter.draft || content.trim().length === 0,
     slug,
     readTime: readTimeFrom(content),
     content,

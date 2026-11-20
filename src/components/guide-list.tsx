@@ -66,13 +66,13 @@ export function GuideList({ guides, tags }: GuideListProps) {
       </p>
 
       {visible.length > 0 ? (
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,20rem),1fr))] gap-6">
-          {visible.map((guide) => (
-            <GuideCard key={guide.slug} guide={guide} />
+        <div className="grid border-l border-t border-border md:grid-cols-2 lg:grid-cols-3">
+          {visible.map((guide, index) => (
+            <GuideCard key={guide.slug} guide={guide} index={index} />
           ))}
         </div>
       ) : (
-        <p className="text-muted-foreground">No guides match that tag yet.</p>
+        <p className="text-muted-foreground">{activeTag ? "No guides match that tag yet." : "No guides are published yet."}</p>
       )}
     </>
   );

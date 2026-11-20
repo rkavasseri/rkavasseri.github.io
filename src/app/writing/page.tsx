@@ -107,12 +107,12 @@ export default function WritingPage() {
           </Link>
         </div>
         <p className="mb-6 leading-7 text-muted-foreground">
-          Long-form technical walkthroughs hosted here — infrastructure, GPU
-          clusters, and the practical details that rarely get written down.
+          Practical technical instruction on GPU machine learning and research
+          computing, with worked examples and experiments.
         </p>
         <div className="grid gap-6 sm:grid-cols-2">
-          {recentGuides.map((guide) => (
-            <GuideCard key={guide.slug} guide={guide} />
+          {recentGuides.map((guide, index) => (
+            <GuideCard key={guide.slug} guide={guide} index={index} />
           ))}
         </div>
       </section>

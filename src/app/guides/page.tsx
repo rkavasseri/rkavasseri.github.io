@@ -6,7 +6,7 @@ import { getAllGuides, getAllTags } from "@/lib/mdx";
 export const metadata: Metadata = {
   title: "Guides",
   description:
-    "Long-form technical guides on high-performance computing, infrastructure, and applied machine learning.",
+    "Practical guides on GPU machine learning, numerical precision, and research computing.",
 };
 
 export default function GuidesPage() {
@@ -20,9 +20,9 @@ export default function GuidesPage() {
           Guides
         </h1>
         <p className="mt-4 text-lg leading-8 text-muted-foreground">
-          Technical write-ups on the infrastructure behind research computing —
-          clusters, containers, and the machine learning workloads that run on
-          them. Written for people doing the work.
+          Practical guides on GPU machine learning and research computing,
+          with worked examples, engineering trade-offs, and experiments you can
+          adapt to your own hardware.
         </p>
       </header>
 
