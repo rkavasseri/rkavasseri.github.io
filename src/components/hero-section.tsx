@@ -5,6 +5,7 @@ import { ArrowDown, ArrowRight, ArrowUpRight } from "lucide-react";
 import { cvPath, hasCv, siteConfig, socialLinks } from "@/lib/constants";
 
 const disciplines = [
+  "AI Safety & Verification",
   "Foundational AI",
   "AI for Science",
   "Production AI",
@@ -30,7 +31,7 @@ export function HeroSection() {
               Rajesh<br />Kavasseri<span aria-hidden>.</span>
             </h1>
             <p className="mt-9 max-w-3xl text-xl leading-8 md:text-2xl">
-              I build AI systems for researchers and teach people how to use and evaluate them. At South Dakota State University, I’m a professor of electrical engineering, Associate Dean for Research, and Co-Executive Director of the Center for AI Innovation and Emergent Technologies. I helped launch SDSU’s AI Engineering program and lead the Science Commons pilot through the center.
+              I build AI systems for researchers and teach people how to use and evaluate them. At South Dakota State University, I’m a professor of electrical engineering, Associate Dean for Research, and Co-Executive Director of the Center for AI Innovation and Emergent Technologies. I helped launch SDSU’s AI Engineering program and lead the Science Commons pilot through the center. Trained in control engineering for electric power systems, I’m now working on what it would take to make AI safe the way engineered systems are: by guarantee, not by average-case testing.
             </p>
             <div className="mt-9 flex flex-wrap gap-3">
               <Link href="/projects" className="tech-button bg-foreground text-background">

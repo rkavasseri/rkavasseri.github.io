@@ -30,6 +30,29 @@ export interface Project {
 
 export const projects: Project[] = [
   {
+    title: "Provable safety for human-in-the-loop AI",
+    anchor: "closed-loop-safety",
+    category: "AI Safety / Control Theory",
+    description:
+      "Flight-envelope protection guarantees an aircraft won’t stall whatever the pilot does: the safe set is proven invariant under any input. I’m exploring the same standard for AI systems: treat both the model and the human in the loop as worst-case disturbances, and verify a small shield that keeps the system’s actions inside a specified safe set, using barrier certificates, reachability analysis, and runtime-assurance architectures. Open questions: which harms can be specified as safe sets at all, and how human approval behaves as a feedback element.",
+    tech: ["AI Safety", "Barrier Certificates", "Reachability", "Runtime Assurance", "Scalable Oversight"],
+    status: "Research direction",
+    featured: true,
+  },
+  {
+    title: "Genomi",
+    category: "Scientific AI / Verifiable Outputs",
+    description:
+      "A natural-language interface to microbial genomics, built with a domain expert. It takes isolates from sequencing to a ranked shortlist of strains. Answers are grounded in each run’s computed results, numerical claims are checked against them, and every answer links to supporting evidence and software versions. Also a testbed for studying how non-experts can oversee AI-generated scientific conclusions.",
+    tech: ["Microbial Genomics", "Grounded Q&A", "Claim Checking", "Evidence Tracing"],
+    links: {
+      demo: "https://demo.genomi.si",
+    },
+    linkLabels: { demo: "Demo" },
+    status: "Invite-only",
+    featured: true,
+  },
+  {
     title: "Seahound",
     category: "Physics-Informed AI / Remote Sensing",
     description:
@@ -100,7 +123,7 @@ export const projects: Project[] = [
 
 /** Keep research and deployed systems grouped independently of array position. */
 export const researchProjects = projects.filter((project) =>
-  ["Seahound", "SDSU Science Commons"].includes(project.title),
+  ["Provable safety for human-in-the-loop AI", "Genomi", "Seahound", "SDSU Science Commons"].includes(project.title),
 );
 
 export const productionProjects = projects.filter(
