@@ -1,0 +1,46 @@
+---
+title: "modax: a module-axis transformer"
+question: "Can frozen specialist language models run side by side and exchange state through shared axial attention, so that new specialists can be added without retraining?"
+summary: "A pre-registered study. The go/no-go rules for spending large-GPU time are fixed in a protocol and decided by a run on a workstation first."
+status: "Pre-registered"
+area: "Foundation model architecture"
+started: "2026-11-15"
+updated: "2026-11-15"
+order: 5
+lastGate:
+  date: "2026-11-15"
+  name: "Real-model smoke run"
+  result: "All gate checks passed on SmolLM2-135M with three-step budgets. This GO is under a draft protocol with margins set to zero, so it is not binding."
+notClaimed: "No sparse compute: every column runs at every layer. No result yet under a signed protocol."
+next: "Fix the four margins, sign the protocol, run the three-seed workstation study, then spend B200 time only if it says GO."
+tags: ["Transformers", "Modular models", "Pre-registration"]
+related: []
+---
+
+## The idea
+
+A transformer already has two axes: tokens, which share weights and talk through attention, and depth, which composes layers. modax adds a third, **columns**: several frozen specialist models branched from one base, running in lockstep. At chosen layers they exchange state through axial attention whose weights are shared across columns, and a shared gate mixes their native output heads.
+
+Because the trainable parts are shared across columns, a new specialist can in principle be added without retraining. That is one of the things the study tests.
+
+## Decisions fixed in advance
+
+- Columns are frozen specialists of the same width, depth and vocabulary, so nothing is retrained when one is added.
+- Axial attention starts at zero at the output, so at initialization the system equals the bare columns.
+- The primary variant mixes at mid-depth. Mixing only at the output is a control, because an earlier pilot found no value there.
+- The private baseline gets the same number of trainable parameters. Otherwise an axial win could simply be extra capacity.
+
+## The gates
+
+| Gate | Test |
+|---|---|
+| G2 | Mid-depth mixing beats the parameter-matched private baseline |
+| G2b | Mid-depth mixing beats output-only mixing |
+| G3 | Adding a column keeps old-domain performance and helps the new domain, without retraining |
+| G4 | Axial attention stays within a stated cost bound |
+
+## Verified so far
+
+- The lockstep decoder reproduces Hugging Face logits exactly on the real SmolLM2-135M.
+- Twenty gate tests cover parity, prefix invariance, batch independence, column-axis properties, gradients and reloading, data order, and the ledger.
+- The full study runs end to end on the real model. Its GO is not meaningful until the protocol is signed with real margins.

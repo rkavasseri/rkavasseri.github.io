@@ -1,0 +1,47 @@
+---
+title: "KVForge: a safe simulator for paged KV-cache sharing"
+question: "How much transformer KV-cache capacity can prefix sharing save, and can the bookkeeping be made provably safe before any GPU is involved?"
+summary: "A Rust simulator for paged KV-cache metadata: bounded allocation, shared immutable prefixes, namespace isolation, copy-on-write forks, and LRU eviction. Every state is checked against an independent oracle."
+status: "Active"
+area: "ML systems"
+started: "2026-10-29"
+updated: "2026-10-29"
+order: 6
+lastGate:
+  date: "2026-10-29"
+  name: "Oracle stress test"
+  result: "Invariants checked after every operation against an independent token oracle, across five seeds and 50,000 randomized steps."
+notClaimed: "All KV bytes are nominal model capacity, not measured memory. No model weights, no inference, no GPU buffers, and no throughput claims."
+next: "A reserve-and-commit backend boundary, after profiling metadata costs on representative workloads."
+tags: ["Rust", "LLM serving", "KV cache", "Systems"]
+related: []
+---
+
+## What it is
+
+Serving systems store attention keys and values for every token in fixed-size pages. When many requests share the same long prompt, those pages can be shared rather than copied. KVForge simulates only the metadata: which pages exist, who references them, and when they can be freed or evicted. It stores small token-ID vectors and nothing else.
+
+## A worked example
+
+The default geometry resembles an 8-billion-parameter model: 36 layers, 8 KV heads, dimension 128, 16 tokens per block, BF16-sized elements. Each token accounts for 144 KiB, and each full block for 2.25 MiB.
+
+Twenty requests share a 16,384-token prompt and each adds a unique 128-token suffix:
+
+| Snapshot | Exact value |
+|---|---|
+| Shared prefix blocks | 1,024 |
+| Distinct suffix blocks | 160 |
+| Distinct physical blocks | 1,184 |
+| Logical block references | 20,640 |
+| Nominal capacity with sharing | 2.60 GiB |
+| Nominal capacity without sharing | 45.35 GiB |
+
+## How correctness is checked
+
+- An independent token oracle tracks what every live request should contain, and stress tests validate every request against it after every operation.
+- Tests cover memory pressure and atomicity, generations, namespaces, and copy-on-write.
+- Formatting, Clippy with warnings as errors, and the full test suite pass locally. The CI configuration also covers Linux, but no remote CI results are claimed.
+
+## Limits, stated plainly
+
+The manager is synchronous and meant for one owner. Namespace identities come from the caller, so the simulator cannot verify real model weights. Allocation uses a bounded pool of metadata slots, not real tensor storage.

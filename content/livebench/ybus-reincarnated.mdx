@@ -1,0 +1,58 @@
+---
+title: "Ybus, Reincarnated: contingency screening under AC physics"
+question: "Do fast N-k contingency screens still catch the outages that matter once you check them against full AC power flow, at high loading and with large data-center loads?"
+summary: "Exhaustive AC ground truth on IEEE test grids, used to grade the fast screens operators rely on, including the partition screen from my own 2010 paper."
+status: "Active"
+area: "Power systems / Scientific computing"
+started: "2026-11-18"
+updated: "2026-11-19"
+order: 2
+lastGate:
+  date: "2026-11-19"
+  name: "W2 loading sweep"
+  result: "Ground truth verified (99.96% on case118, 100% on case300). The DC screen's ranking peaks near 1.15× load and then declines; the 2010 topology-only partition screen is close to random against AC truth."
+notClaimed: "No results yet on data-center clusters (W3), the 2,000-bus grid, or factorization reuse. Test grids, not a real utility system."
+next: "Gate G2: summarize the data-center runs on case300 and test whether the Ybus-weighted partition screen keeps higher recall."
+tags: ["Power systems", "Contingency analysis", "Sparse linear algebra", "Data centers"]
+related: []
+---
+
+## Two questions
+
+**Q1, screening validity.** Fast screens, such as DC line-outage distribution factors and graph-partition screens, decide which contingencies get a full AC study. Do they still find the ones that matter as loading rises and as large, flexible, voltage-sensitive loads appear?
+
+**Q2, computation.** When can AC contingency solves share a matrix factorization across outages and operating points, and can a cheap rule predict when they can't? Q2 is what makes exhaustive ground truth for Q1 affordable, and it may become a supercomputing paper of its own.
+
+## Lineage
+
+The project reopens a line of work that runs from Tinney and Walker's optimally ordered sparse factorization (1967), through sparse vector methods and partial refactorization (1985), to my own 2010 paper with Ababei on extreme-event screening through constrained graph partitioning. That screen assumed a lossless network. This project tests where that assumption breaks.
+
+## Hypotheses, stated before the runs
+
+- **H1.** DC-screen recall of severe AC outcomes falls as system loading rises.
+- **H2.** It falls further as concentrated, voltage-sensitive load grows, because failures become voltage-driven and DC cannot see voltage.
+- **H3.** A partition screen weighted by the Ybus admittances, with anchors updated per operating point, keeps higher recall than both the DC screen and the 2010 screen.
+- **H4.** Across a sweep of flexible load, most cases can reuse a reference factorization, and a cheap signal predicts which can't.
+
+If H1 and H2 fail, DC screening is vindicated for this regime, and that is publishable too.
+
+## First results: the W2 loading sweep
+
+The exhaustive AC ground truth was cross-checked against PYPOWER's solver: 99.96% of 4,445 compared cases on IEEE 118-bus and 100% of 1,273 on the 300-bus system.
+
+On the 118-bus system, ranking quality (AUC, where 0.5 is random) moves like this as load scales up:
+
+| Load scale | DC screen AUC | 2010 partition AUC | Share of outages that are severe |
+|---|---|---|---|
+| 0.80 | 0.73 | 0.53 | 0.16 |
+| 1.00 | 0.87 | 0.55 | 0.30 |
+| 1.15 | 0.90 | 0.54 | 0.46 |
+| 1.30 | 0.78 | 0.52 | 0.75 |
+| 1.50 | 0.66 | 0.54 | 0.86 |
+
+Two things stand out. The DC screen ranks well at moderate stress, then degrades as the system approaches its limit. And the topology-only 2010 partition screen barely beats chance against AC truth, which is exactly the weakness the new Ybus-weighted screen is meant to address. Most misses by both screens are voltage-driven. On the 300-bus system, DC recall of voltage-driven outcomes stays below 0.2 at every loading tested.
+
+## What comes next
+
+- **G2:** data-center clusters on the 300-bus system, plus the Ybus-weighted screen.
+- **G3:** at least 2× headroom from factorization reuse. If it passes, the reuse engine moves to GPUs as a separate supercomputing paper. If not, it becomes a section of the power-systems paper.

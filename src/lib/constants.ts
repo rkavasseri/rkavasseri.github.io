@@ -45,6 +45,7 @@ export const navLinks: NavLink[] = [
     ],
   },
   { title: "Projects", href: "/projects" },
+  { title: "Livebench", href: "/livebench" },
   { title: "About", href: "/about" },
   { title: "Contact", href: "/contact" },
 ];

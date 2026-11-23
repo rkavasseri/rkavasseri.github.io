@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { MDXRemote } from "next-mdx-remote/rsc";
 import rehypePrettyCode, { type Options as PrettyCodeOptions } from "rehype-pretty-code";
 import rehypeSlug from "rehype-slug";
+import remarkGfm from "remark-gfm";
 import { ArrowLeft, ArrowRight, ChevronLeft } from "lucide-react";
 
 import { mdxComponents } from "@/components/mdx-components";
@@ -107,6 +108,7 @@ export default function GuidePage({ params }: GuidePageProps) {
               components={mdxComponents}
               options={{
                 mdxOptions: {
+                  remarkPlugins: [remarkGfm],
                   rehypePlugins: [
                     rehypeSlug,
                     rehypeRawCode,

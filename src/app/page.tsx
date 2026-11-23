@@ -5,6 +5,8 @@ import { GuideCard } from "@/components/guide-card";
 import { TeachingSection } from "@/components/teaching-section";
 import { HeroSection } from "@/components/hero-section";
 import { ProjectCard } from "@/components/project-card";
+import { BenchStatusChip } from "@/components/bench-status";
+import { getAllBenchProjects } from "@/lib/livebench";
 import { getAllGuides } from "@/lib/mdx";
 import { productionProjects, researchProjects } from "@/lib/projects";
 
@@ -21,6 +23,7 @@ function SectionHeading({ label, title, description }: { label: string; title: s
 
 export default function HomePage() {
   const featuredGuides = getAllGuides().slice(0, 3);
+  const bench = getAllBenchProjects();
 
   return <>
     <HeroSection />
@@ -34,6 +37,14 @@ export default function HomePage() {
         </div>
         <Link href="/projects" className="mt-8 inline-flex items-center gap-2 text-sm font-semibold hover:underline hover:underline-offset-4">View all projects <ArrowRight size={16} /></Link>
       </div>
+    </section>
+
+    <section className="mx-auto max-w-[1440px] px-5 py-20 lg:px-10 lg:py-28">
+      <SectionHeading label="Livebench / open kitchen" title="Research in the open, gates and all." description="Active projects with their questions, gates decided in advance, results, failures, and what each one does not claim." />
+      <div className="mt-14 grid border-l border-t border-border md:grid-cols-2 xl:grid-cols-3">
+        {bench.map((project) => <Link key={project.slug} href={`/livebench/${project.slug}`} className="group flex flex-col justify-between gap-6 border-b border-r border-border p-6 transition-colors hover:bg-accent/50 lg:p-8"><div><BenchStatusChip status={project.status} /><h3 className="mt-5 text-2xl font-semibold tracking-[-.03em] group-hover:underline group-hover:underline-offset-4">{project.title}</h3><p className="mt-3 leading-7 text-muted-foreground">{project.question}</p></div><p className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground">{project.area}</p></Link>)}
+      </div>
+      <Link href="/livebench" className="mt-8 inline-flex items-center gap-2 text-sm font-semibold hover:underline hover:underline-offset-4">Open the livebench <ArrowRight size={16} /></Link>
     </section>
 
     <section className="mx-auto max-w-[1440px] px-5 py-20 lg:px-10 lg:py-28">

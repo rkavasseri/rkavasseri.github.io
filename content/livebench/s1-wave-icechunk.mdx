@@ -1,0 +1,45 @@
+---
+title: "Sentinel-1 wave mode × Icechunk: a storage experiment"
+question: "Does an Icechunk view of the Sentinel-1 wave-mode archive make repeated scientific access fast enough to justify the cost of extracting, indexing and storing it?"
+summary: "A controlled systems study with a frozen protocol. Twelve readers, identical outputs, every trial hashed. The pilot already shows that the answer depends on whether the cache is warm."
+status: "Pre-registered"
+area: "Scientific data infrastructure"
+started: "2026-11-18"
+updated: "2026-11-19"
+order: 4
+lastGate:
+  date: "2026-11-19"
+  name: "Warm versus cold comparison"
+  result: "With a warm cache, memory mapping wins by a wide margin. After purging the cache before each trial, offset and virtual readers were about 3–5× faster than memory mapping."
+notClaimed: "No archive-wide or population claims: the pilot is two products and four vignettes chosen for convenience. Wave retrieval accuracy is not tested."
+next: "A stratified random cohort of 20–30 products across platform, year and file size, drawn from a complete saved catalog."
+tags: ["Sentinel-1", "Zarr", "Icechunk", "Benchmarking"]
+related: []
+---
+
+## The question
+
+Sentinel-1 wave mode produces a very large number of small images, which is a poor fit for most storage systems. Icechunk can present the archive as a versioned array store, either by pointing at the original files in place or by rewriting them natively. The question is whether that helps enough to pay for itself.
+
+This is a systems experiment on a fixed numerical task. It does not test wave retrieval accuracy.
+
+## How the study is built
+
+- **A frozen protocol.** Each run copies the protocol into its output directory, so results are always read against the rules in force when they started.
+- **Twelve readers, identical outputs.** Original ZIP decoding, unpacked TIFFs, raw offsets, memory mapping, three virtual Icechunk policies, sharded Zarr, shared virtual repositories, and native Icechunk with and without compression. Every reader must produce the same integer output, checked by hash.
+- **Products are the unit.** Images and repeated timings within one product are not treated as independent observations.
+- **Honest sampling.** The default fetch picks the smallest files for convenience, so it cannot support claims about the archive. The real cohort must come from a complete, saved catalog.
+
+## What the pilot shows
+
+The pilot covers two products and four images, with 480 numerically verified trials.
+
+- **Warm cache:** memory mapping is fastest by a wide margin. Compressed native Icechunk was about 35× slower for full images.
+- **Cold start**, with the cache purged before each trial: raw offsets were about 5.3× faster than memory mapping, and whole-file virtual Icechunk about 4.3× faster.
+- **Storage:** compressed native Icechunk took 280.65 MiB against 290.12 MiB for the original ZIPs. It met the storage target but not the read-speed target.
+
+Which reader looks best depends on whether the data is already in memory, so the cohort study reports both conditions.
+
+## Concurrency
+
+A separate synchronized experiment tests concurrent commits and forks, with one to four writers in the pilot, and fully verifies the numbers in every case.

@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 
 import { siteConfig } from "@/lib/constants";
+import { getAllBenchProjects } from "@/lib/livebench";
 import { getAllGuides } from "@/lib/mdx";
 
 export const dynamic = "force-static";
@@ -11,6 +12,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/guides",
     "/writing",
     "/projects",
+    "/livebench",
     "/about",
     "/contact",
   ].map(
@@ -29,5 +31,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.6,
   }));
 
-  return [...routes, ...guides];
+  const bench = getAllBenchProjects().map((project) => ({
+    url: `${siteConfig.url}/livebench/${project.slug}`,
+    lastModified: new Date(project.updated),
+    changeFrequency: "weekly" as const,
+    priority: 0.7,
+  }));
+
+  return [...routes, ...guides, ...bench];
 }

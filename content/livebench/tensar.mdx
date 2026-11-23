@@ -1,0 +1,54 @@
+---
+title: "tenSAR: GPU SAR focusing and the tensor-core question"
+question: "Can custom GPU kernels beat an optimized cuFFT SAR pipeline at matched image quality, and do tensor cores help?"
+summary: "Fused FP32 kernels gave reproducible speedups on prepared workloads. Tensor cores did not, a vendor-fused control roughly matched the custom path, and the butterfly route failed its operational cost gate."
+status: "Findings recorded"
+area: "GPU computing / Remote sensing"
+started: ""
+updated: "2026-11-21"
+order: 3
+lastGate:
+  date: "2026-11-21"
+  name: "Single-acquisition butterfly gate"
+  result: "Failed on cost. Accuracy passed at adequate rank, but building factors for each new geometry took 14.75–86.94 s against about 0.68–0.90 s for direct CUDA."
+notClaimed: "No tensor-core advantage, no advantage over vendor fusion (cuFFTDx), and no 2× speedup for a cold single acquisition."
+next: "Carried forward into tcsar, which targets fused radar kernels on AMD where no device-callable FFT exists."
+tags: ["CUDA", "SAR", "Tensor Cores", "Numerical precision"]
+related: ["tcsar"]
+---
+
+## The question
+
+The objective was faster accurate SAR processing: custom CUDA kernels that beat an optimized cuFFT range-Doppler (RDA) pipeline at matched image quality, with 2× as the target. Tensor cores, CUDA cores, and storage formats were implementation choices, not the goal.
+
+Quality limits were fixed in advance: relative L2 error of at most 1e-5 against the same algorithm in complex128 on the CPU, and masked phase RMS of at most 1e-3 rad.
+
+## What was measured
+
+GPU results were measured on an NVIDIA Tesla T4. Each ratio is tied to its stated baseline and timing boundary. Speedups from different scorecards should not be multiplied.
+
+| Result | Comparison | Boundary |
+|---|---|---|
+| Prepared RDA, 1024×2048 | 2.11× median over the fastest tuned cuFFT configuration tested | FP32 SIMT fusion; setup and transfers excluded |
+| Prepared RDA, 512×512 | 1.54× | Same pipeline and boundary |
+| Million-sample complex convolution | 1.89× median over tested cuFFT candidates | Prepared GPU workload |
+| Final vendor control | Custom 1.44× / 1.98× over cuFFT; cuFFTDx roughly matched or slightly beat custom | Three independent processes, shuffled rounds |
+| Native butterfly application | About 1.26–1.27× over cuBLAS factors at 16 right-hand sides | Prepared, fixed geometry |
+| Matrix-free butterfly builder | 3.09× faster setup, about 9.8× lower peak memory than our dense builder | Internal baseline |
+
+The largest selected image error in the RDA runs was a relative L2 of 5.49e-7.
+
+## Where the gains came from
+
+The gains came from removing memory passes and changing data layout, not from tensor cores. Register-level FFT butterflies and bank-swizzled shared memory implement a fused overlap-save range convolution, which writes data directly in the layout the azimuth stage needs.
+
+## What failed, and stays on the record
+
+- **Tensor-core FFT.** No performance advantage on the T4.
+- **Vendor fusion.** NVIDIA's cuFFTDx roughly matches the handwritten fused path, so a handwritten advantage over vendor fusion is not demonstrated.
+- **Fresh geometry.** For a new acquisition, building the geometry tables and uploading them accounts for about 98–99.6% of the cost. Kernel speedups barely matter at that boundary.
+- **Butterfly operators.** The sampled-SVD butterfly passed accuracy and was fast once prepared, but for the chosen target (one image per acquisition with changing geometry) its construction cost fails the gate. That branch is closed as implemented.
+
+## What carried forward
+
+The lesson was that matrix units pay off inside fused or compute-bound kernels, and that the real gap is on AMD, where FFT and solver libraries can only be launched from the host. That became [tcsar](/livebench/tcsar).

@@ -1,0 +1,48 @@
+---
+title: "tcsar: cross-vendor matrix-core kernels for radar"
+question: "Can the hardest SAR and radar kernels run on matrix units at FP32-equivalent accuracy, fused, and portably across NVIDIA and AMD?"
+summary: "A kernel library built for matrix cores, with a stated accuracy guarantee per precision format. The first fused eigensolver for phase linking is built and measured on NVIDIA."
+status: "Active"
+area: "GPU computing / Radar signal processing"
+started: "2026-11-22"
+updated: "2026-11-22"
+order: 1
+lastGate:
+  date: "2026-11-22"
+  name: "E1 fused covariance and leading eigenpair"
+  result: "Built in FP32. On a T4 against cuBLAS plus cuSOLVER heevjBatched: 2.7–6.5× at N = 32, but only 0.8–1.3× at N = 16."
+notClaimed: "No AMD results yet, and no end-to-end SAR or InSAR gains. Application-level evaluation is deferred to a second paper."
+next: "Fused RDA azimuth path, then measurement against rocFFT, hipFFT, rocSOLVER and MAGMA on MI300X-class hardware."
+tags: ["CUDA", "HIP", "Matrix cores", "SAR", "InSAR"]
+related: ["tensar"]
+---
+
+## Why this exists
+
+GPU vendors now put most of their throughput into low-precision matrix units, while FP64 and FP32 fall behind. Kernels that cannot use matrix units lose ground with every hardware generation.
+
+Radar workloads are complex-valued, phase-sensitive, and need wide dynamic range, which is exactly what AI-tuned libraries ignore. AMD in particular has no device-callable FFT that uses its matrix instructions, so radar pipelines make repeated round trips to memory.
+
+## The direction
+
+The target is **fused radar kernels on AMD**, measured against rocFFT, hipFFT, rocSOLVER and MAGMA. NVIDIA GPUs serve as correctness checks. The build order:
+
+1. Fused range compression (built).
+2. Fused RDA azimuth path.
+3. Fused covariance and leading eigenvector for InSAR phase linking (first version built).
+4. Back-projection.
+
+## What has been learned so far
+
+Standalone batched FFTs turned out to be memory-bound, so matrix cores only pay off inside fused or compute-bound kernels. The speed criterion now applies to fused use.
+
+Split-precision arithmetic has a cost: three BF16 terms carry about 16 bits, so FP32 equivalence on BF16-only hardware needs a six- or nine-way split.
+
+## Two papers, kept separate
+
+| | Paper 1: this library | Paper 2: later |
+|---|---|---|
+| Claim | Hard radar kernels can run on matrix cores at FP32/FP64-equivalent accuracy, portably | End-to-end SAR/InSAR on these kernels keeps image quality and is faster per watt |
+| Metrics | Kernel error against FP64, percent of roofline, bytes moved, energy per operation | PSLR, ISLR, InSAR coherence and displacement bias, images per second |
+
+This project continues from [tenSAR](/livebench/tensar).
